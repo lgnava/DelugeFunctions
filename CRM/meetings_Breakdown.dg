@@ -1,0 +1,59 @@
+
+//Contact_ID = 3020726000015059019;
+Contact = zoho.crm.getRecordById("Contacts",Contact_ID);
+if(!Contact.get("Meeting_Start_Date_Time").isNull() && !Contact.get("Meeting_Name").isNull() && !Contact.get("Duration").isNull())
+{
+	datetime = Contact.get("Meeting_Start_Date_Time");
+	coolDate = datetime.toDate();
+	hours = datetime.toTime("yyyy-MM-dd'T'HH:mm:ss").toString("HH");
+	minutes = datetime.toTime("yyyy-MM-dd'T'HH:mm:ss").toString(":mm");
+	if(hours.toNumber() >= 12)
+	{
+		if(hours.toNumber() > 12)
+		{
+			hours = hours.toNumber() - 12;
+		}
+		hours = hours + minutes + " pm (EDT)";
+	}
+	else
+	{
+		hours = hours + minutes + " am (EDT)";
+	}
+	breakdown = coolDate + ", " + hours;
+	m = Map();
+	m.put("Meeting_Date_Breakdown",breakdown);
+	info zoho.crm.updateRecord("Contacts",Contact_ID,m);
+}
+
+
+// versión en Ninna
+//MeetingId = 3509146000047630077;3509146000049031002
+Meeting = zoho.crm.getRecordById("Activities",MeetingId);
+info Meeting;
+mFrom = Meeting.get('Start_DateTime');
+info mFrom;
+if(!Meeting.get('Start_DateTime').isNull() && !Meeting.get('What_Id').get('id').isNull())
+{
+	datetime = Meeting.get('Start_DateTime');
+	coolDate = datetime.toDate();
+	hours = datetime.toTime("yyyy-MM-dd'T'HH:mm:ss").toString("HH");
+	minutes = datetime.toTime("yyyy-MM-dd'T'HH:mm:ss").toString(":mm");
+	if(hours.toNumber() >= 12)
+	{
+		if(hours.toNumber() > 12)
+		{
+			hours = hours.toNumber() - 12;
+		}
+		hours = hours + minutes + " pm (PT)";
+	}
+	else
+	{
+		hours = hours + minutes + " am (PT)";
+	}
+	breakdown = coolDate + ", " + hours;
+	m = Map();
+	m.put("Meeting_Date_Breakdown",breakdown);
+	info breakdown;
+	info Meeting.get('What_Id');
+	info zoho.crm.updateRecord("Leads",Meeting.get('What_Id').get('id'),m);
+}

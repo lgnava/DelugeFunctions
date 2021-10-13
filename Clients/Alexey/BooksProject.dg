@@ -1,0 +1,129 @@
+//ContactID = 4368666000000694172;
+org_id = "661677775";
+Contact = zoho.crm.getRecordById("Contacts",ContactID);
+deposit = Contact.get("Deposit");
+//info Contact;
+acctid = Contact.get("Account_Name").get("id");
+url_create = "https://books.zoho.com/api/v3/crm/account/" + acctid + "/import?organization_id=" + org_id;
+resp = invokeurl
+[
+	url :url_create
+	type :POST
+	connection:"bookscontactcreate"
+];
+info resp;
+BooksCustomer_ID = zoho.books.getRecords("Contacts",org_id,"zcrm_account_id=" + acctid).get("contacts").get(0).get("contact_id");
+Project_Name = Contact.get("Account_Name").get("name") + " - " + Contact.get("First_Name") + " " + Contact.get("Last_Name");
+info Project_Name;
+values = Map();
+values.put("customer_id",BooksCustomer_ID);
+values.put("rate_formatted","$" + Contact.get("Per_Hour") + ".00");
+values.put("project_name",Project_Name);
+values.put("currency_code",Contact.get("Currency"));
+values.put("billing_type","based_on_project_hours");
+values.put("billing_type_formatted","Based on Project Hours");
+values.put("rate",Contact.get("Per_Hour"));
+values.put("show_in_dashboard","true");
+values.put("customer_name",Contact.get("Account_Name").get("name"));
+values.put("status","active");
+custom_fields = List();
+project_type = Map();
+project_type.put("api_name","cf_project_type");
+project_type.put("value","Zoho");
+custom_fields.add(project_type);
+values.put("custom_fields",custom_fields);
+tasks = List();
+tasks.add({"task_name":"Meeting with " + Contact.get("First_Name") + " " + Contact.get("Last_Name")});
+values.put("tasks",tasks);
+get_user = invokeurl
+[
+	url :"https://books.zoho.com/api/v3/users/me?organization_id=" + org_id
+	type :GET
+	connection:"bookscontactcreate"
+];
+users = List();
+users.add({"user_id":get_user.get("user").get("user_id")});
+values.put("users",users);
+info values;
+response = zoho.books.createRecord("Projects",org_id,values);
+info response;
+project_id = "";
+if(response.get("message") == "The project has been created.")
+{
+	project_data = response.get("project");
+	project_id = project_data.get("project_id");
+}
+//create retainer invoice
+retainer_map = Map();
+line_items = List:Map();
+item_map = Map();
+parameter_map = Map();
+parameter_map.put("customer_id",BooksCustomer_ID);
+if(project_id != "")
+{
+	parameter_map.put("project_id",project_id);
+}
+item_map.put("description","Retainer");
+item_map.put("item_order",1);
+item_map.put("rate",deposit);
+item_map.put("is_emailed",true);
+line_items.add(item_map);
+parameter_map.put("line_items",line_items);
+retainer_map.put("JSONString",parameter_map);
+create_retainer_url = "https://books.zoho.com/api/v3/retainerinvoices?organization_id=" + org_id;
+create_retainer_resp = invokeurl
+[
+	url :create_retainer_url
+	type :POST
+	parameters:retainer_map
+	connection:"bookscontactcreate"
+];
+info "retainer invoice" + create_retainer_resp;
+if(create_retainer_resp.get("message") == "The retainer invoice has been created.")
+{
+	retainer_data = create_retainer_resp.get("retainerinvoice");
+	retainer_number = retainer_data.getJSON("retainerinvoice_number");
+	//return "The retainer invoice " + retainer_number + " has been created.";
+}
+else
+{
+	msg = create_retainer_resp.get("message");
+	//return msg;
+}
+/*
+{
+"rate_formatted": "$100.00",
+"non_billable_hours": "",
+"billable_hours": "",
+"description": "",
+"project_name": "Test Project",
+"billed_amount": "",
+"currency_code": "CAD",
+"billed_hours": "",
+"un_billed_amount_formatted": "",
+"total_amount_expense_inclusive": "",
+"project_id": "2168266000000586013",
+"rate": "100.0",
+"billing_type": "based_on_project_hours",
+"custom_field_hash": "{\"cf_project_type\":\"Zoho\",\"cf_project_type_unformatted\":\"Zoho\"}",
+"billing_type_formatted": "Based on Project Hours",
+"tasks": "[{\"task_name\":\"Meeting\",\"budget_hours_in_time_formatted\":\"00:00\",\"rate_formatted\":\"$0.00\",\"non_billable_hours\":\"00:00\",\"budget_hours\":0,\"billable_hours\":\"00:00\",\"description\":\"\",\"task_id\":\"2168266000000586017\",\"is_billable\":true,\"total_hours\":\"00:00\",\"status_formatted\":\"Active\",\"billed_hours\":\"00:00\",\"task_custom_fields\":[],\"un_billed_hours\":\"00:00\",\"rate\":0,\"budget_hours_in_time\":\"00:00\",\"zohopeople_job_id\":\"\",\"budget_hours_formatted\":\"00:00\",\"status\":\"active\"}]",
+"billed_amount_formatted": "",
+"budget_threshold": "80.0",
+"total_amount_formatted": "",
+"billable_amount": "",
+"show_in_dashboard": "true",
+"custom_fields": "[{\"customfield_id\":\"2168266000000586001\",\"show_in_store\":false,\"show_in_portal\":false,\"is_active\":true,\"index\":1,\"label\":\"Project type\",\"show_on_pdf\":false,\"edit_on_portal\":false,\"edit_on_store\":false,\"show_in_all_pdf\":false,\"value_formatted\":\"Zoho\",\"data_type\":\"dropdown\",\"placeholder\":\"cf_project_type\",\"value\":\"Zoho\"}]",
+"total_hours": "",
+"non_billable_amount": "",
+"users": "[{\"budget_hours_in_time_formatted\":\"00:00\",\"rate_formatted\":\"$0.00\",\"non_billable_hours\":\"00:00\",\"user_name\":\"Ely Izik\",\"budget_hours\":0,\"billable_hours\":\"00:00\",\"staff_status_formatted\":\"Active\",\"is_current_user\":true,\"status_formatted\":\"Active\",\"total_hours\":\"00:00\",\"staff_status\":\"active\",\"user_role_formatted\":\"Admin\",\"billed_hours\":\"00:00\",\"un_billed_hours\":\"00:00\",\"user_role\":\"admin\",\"staff_role_formatted\":\"Staff\",\"user_id\":\"2168266000000069001\",\"role_id\":\"2168266000000000619\",\"rate\":0,\"budget_hours_in_time\":\"00:00\",\"budget_hours_formatted\":\"00:00\",\"staff_role\":\"staff\",\"email\":\"bestcrmforwebdevelopment@gmail.com\",\"status\":\"active\"}]",
+"un_billed_hours": "",
+"un_billed_amount": "",
+"total_amount": "",
+"billable_amount_formatted": "",
+"non_billable_amount_formatted": "",
+"customer_name": "Amazonas",
+"customer_id": "2168266000000129045",
+"status": "active"
+}
+*/

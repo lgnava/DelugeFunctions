@@ -1,0 +1,198 @@
+// MIKE ACQUISTO
+////CDA_ID = 2578777000053309273;
+SheetUrl = "https://sheet.zoho.com/sheet/open/l5ewl3a66c5bfed7341708bbf1d6fe9b5118f/sheets/Support%20Staff";
+CDA = zoho.crm.getRecordById("CDAs",CDA_ID);
+if(CDA.get("Credit_Amount").isNull())
+{
+	Credit_Amount = 0;
+}
+else
+{
+	Credit_Amount = CDA.get("Credit_Amount");
+}
+Transaction = zoho.crm.getRecordById("Deals",CDA.get("Transaction").get("id"));
+if(Transaction.get("Transaction_Type") == "Buyer")
+{
+	findFor = "Buyer_Experience";
+}
+else
+{
+	findFor = "Seller_Experience";
+}
+// variables
+BaseAmount = CDA.get("Based_on_Amount");
+TypeOfCommision = CDA.get("Commission_Type");
+CommissionPercentage = CDA.get("Commission_Percentage");
+if(!CDA.get("Agent").isNull())
+{
+	Agent = zoho.crm.getRecordById("CDA_Agents",CDA.get("Agent").get("id"));
+}
+if(!CDA.get("Co_Agent").isNull())
+{
+	CoAgent = zoho.crm.getRecordById("CDA_Agents",CDA.get("Co_Agent").get("id"));
+}
+// Gross commision Calculation
+if(TypeOfCommision == "Percentage")
+{
+	TotalCommission = BaseAmount * CommissionPercentage / 100 - Credit_Amount;
+	info TotalCommission;
+	TotalCommissionBackUp = TotalCommission;
+}
+// Support
+support_amounts_sheet_data = zoho.sheet.getRecords("l5ewl3a66c5bfed7341708bbf1d6fe9b5118f","Support Amounts Table");
+SupportTeamAmount = 0;
+for each  record in support_amounts_sheet_data.get("records")
+{
+	if(TotalCommission.toDecimal() + Credit_Amount >= record.get("From") && TotalCommission.toDecimal() + Credit_Amount <= record.get("To"))
+	{
+		SupportTeamAmount = record.get("Amount");
+	}
+}
+info SupportTeamAmount;
+// Support END
+TotalCommission = TotalCommission - SupportTeamAmount;
+if(!CDA.get("Expense_1").isNull())
+{
+	TotalCommission = TotalCommission - CDA.get("Expense_1_Amount");
+}
+if(!CDA.get("Expense_2").isNull())
+{
+	TotalCommission = TotalCommission - CDA.get("Expense_2_Amount");
+}
+if(!CDA.get("Expense_3").isNull())
+{
+	TotalCommission = TotalCommission - CDA.get("Expense_3_Amount");
+}
+RemainingCommision = TotalCommission;
+factor = 1;
+// Agent commission
+splits_sheet_data = zoho.sheet.getRecords("l5ewl3a66c5bfed7341708bbf1d6fe9b5118f","Splits Table");
+AgentCommission = 0;
+if(!Agent.isNull())
+{
+	for each  record in splits_sheet_data.get("records")
+	{
+		if(record.get("Deal Class") == Transaction.get("Deal_Class"))
+		{
+			percentage = record.get(Agent.get(findFor));
+		}
+	}
+	AgentCommission = factor * TotalCommission * percentage / 100;
+	TotalCommission = TotalCommission - AgentCommission;
+	RemainingCommision = TotalCommission;
+	factor = 100 / percentage;
+}
+// CoAgent commission
+CoAgentCommission = 0;
+if(!CoAgent.isNull())
+{
+	CoAgentCommission = factor * TotalCommission * CoAgent.get("CoAgent_or_Assistant_Split") / 100;
+	if(CoAgentCommission == 0)
+	{
+		CoAgentCommission = AgentCommission * CoAgent.get("CoAgent_or_Assistant_Split") / 100;
+	}
+	TotalCommission = TotalCommission - CoAgentCommission;
+	RemainingCommision = TotalCommission;
+}
+if(RemainingCommision < 1000 && RemainingCommision > 0)
+{
+	// patch for minims 
+	AgentCommission = AgentCommission - (1000 - RemainingCommision) + CoAgentCommission;
+	CoAgentCommission = 0;
+	RemainingCommision = 1000;
+}
+if(RemainingCommision < 0)
+{
+	// patch for when Shanna get 100%
+	AgentCommission = AgentCommission + RemainingCommision;
+	RemainingCommision = 0;
+}
+// Breakdown
+BreakdownLine1 = Transaction.get("Deal_Class").toString();
+TotalCommission = TotalCommissionBackUp;
+BreakdownLine2 = "Total Commission: $" + TotalCommission;
+TotalCommission = TotalCommission - SupportTeamAmount;
+if(!CDA.get("Expense_1").isNull())
+{
+	TotalCommission = TotalCommission - CDA.get("Expense_1_Amount");
+	ExpenseString = " - $" + CDA.get("Expense_1_Amount") + "  = $" + TotalCommission;
+}
+if(!CDA.get("Expense_2").isNull())
+{
+	TotalCommission = TotalCommission - CDA.get("Expense_2_Amount");
+	ExpenseString = " - $" + CDA.get("Expense_2_Amount") + "  = $" + TotalCommission;
+}
+if(!CDA.get("Expense_3").isNull())
+{
+	TotalCommission = TotalCommission - CDA.get("Expense_3_Amount");
+	ExpenseString = " - $" + CDA.get("Expense_3_Amount") + "  = $" + TotalCommission;
+}
+// BREAKDOWNS SECTION END
+// UPDATES
+sheet_data = zoho.sheet.getRecords("l5ewl3a66c5bfed7341708bbf1d6fe9b5118f","Support Staff");
+indx = 1;
+m = Map();
+// updates support amounts
+totalAdd = 0;
+for each  record in sheet_data.get("records")
+{
+	m.put("Individual_" + indx,record.get("Name"));
+	m.put("Description_" + indx,record.get("Description"));
+	amount = record.get("Fixed") + SupportTeamAmount * record.get("Split") / 100;
+	totalAdd = totalAdd + amount;
+	m.put("Amount_" + indx,amount);
+	if(amount < 1000)
+	{
+		m.put("Instructions_" + indx,record.get("Address"));
+	}
+	else
+	{
+		m.put("Instructions_" + indx,record.get("Bank 1"));
+	}
+	indx = indx + 1;
+}
+if(totalAdd > SupportTeamAmount)
+{
+	SupportTeamAmount = totalAdd;
+}
+SupportString = " - $" + SupportTeamAmount + " (support team) = $" + TotalCommission;
+BreakdownLine2 = BreakdownLine2 + SupportString + ExpenseString;
+// support
+if(!Agent.isNull())
+{
+	m.put("Amount",AgentCommission);
+	m.put("Description",Agent.get("Description"));
+	if(AgentCommission < 1000)
+	{
+		m.put("Instructions",Agent.get("Address"));
+	}
+	else
+	{
+		m.put("Instructions",Agent.get("Bank_1"));
+	}
+}
+if(!CoAgent.isNull())
+{
+	m.put("Co_Amount",CoAgentCommission);
+	m.put("Co_Description",CoAgent.get("Description"));
+	if(CoAgentCommission < 1000)
+	{
+		m.put("Co_Instructions",CoAgent.get("Address"));
+	}
+	else
+	{
+		m.put("Co_Instructions",CoAgent.get("Bank_1"));
+	}
+}
+m.put("Breakdown_Line_1",BreakdownLine1);
+m.put("Breakdown_Line_2",BreakdownLine2);
+m.put("Support_Team_Amount",SupportTeamAmount);
+m.put("Acquisto_Real_Estate_Commission",RemainingCommision);
+m.put("Commission_Amount",TotalCommissionBackUp);
+acquisto_sheet_data = zoho.sheet.getRecords("l5ewl3a66c5bfed7341708bbf1d6fe9b5118f","Acquisto Real Estate  Info");
+m.put("Individual",acquisto_sheet_data.get("records").get(0).get("Name"));
+m.put("Wire_Description",acquisto_sheet_data.get("records").get(0).get("Description"));
+m.put("Wire_Instructions",acquisto_sheet_data.get("records").get(0).get("Bank 1"));
+info zoho.crm.updateRecord("CDAs",CDA_ID,m);
+// UPDATES END
+////return "Work in progress " + RemainingCommision;

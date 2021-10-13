@@ -1,0 +1,371 @@
+URL_COPY = "https://app.zuperpro.com/api";
+//API_KEY = "21d39a295c8ac9d9835a00ffa2358089"; // old
+API_KEY = "80981c6457e444c848b6556e21e9a669";
+JOB_CATEGORY_FIELD_NAME = "Job_Category";
+// If not present, first category would be. taken
+PRODUCT_CATEGORY_FIELD_NAME = "Product_Category";
+// If not present, first category would be. taken
+// HEADERS INFO
+headersMap = Map();
+headersMap.put("x-api-key",API_KEY);
+headersMap.put("Content-Type","application/json");
+dealDetails = zoho.crm.getRecordById("Deals",zohoDealId);
+info dealDetails;
+if(dealDetails == null || dealDetails.get("status") == "failure")
+{
+	info "dealDetails is null";
+	return;
+}
+stage = dealDetails.get("Stage");
+info stage;
+if(stage == null || !stage.equals("Closed Won"))
+{
+	info "stage condition is not satisfied";
+	return;
+}
+map1 = Map();
+map1.put("Deal_Id",zohoDealId);
+selectedQuoute = zoho.crm.getRelatedRecords("Quotes","Deals",zohoDealId);
+info "selectedQuoute";
+info selectedQuoute;
+if(selectedQuoute == null || selectedQuoute.size() == 0)
+{
+	info "selectedQuoute condition is not satisfied";
+	return;
+}
+accountInfo = dealDetails.get("Account_Name");
+if(accountInfo == null)
+{
+	info "No account found";
+	return;
+}
+accountId = accountInfo.get("id");
+accountDetails = zoho.crm.getRecordById("Accounts",accountId);
+if(accountDetails == null)
+{
+	info "Account details not found";
+	return;
+}
+info "accountDetails";
+info accountDetails;
+// -----------Push customer starts--------------
+zuperContactId = accountDetails.get("Zuper_Customer_Id");
+customerMap = Map();
+names = accountDetails.get("Account_Name").toList(" ");
+customerMap.put("customer_first_name",names.get(0));
+if(names.size() > 1)
+{
+	customerMap.put("customer_last_name",names.get(1));
+}
+else
+{
+	customerMap.put("customer_last_name",names.get(0));
+}
+customerMap.put("customer_email",accountDetails.get("Email"));
+tagsList = List();
+accountTag = "Zoho_Account_" + accountId;
+tagsList.add(accountTag);
+customerMap.put("customer_tags",tagsList);
+customerAddressMap = Map();
+customerAddressMap.put("street",accountDetails.get("Billing_Street"));
+customerAddressMap.put("landmark","");
+customerAddressMap.put("city",accountDetails.get("Billing_City"));
+customerAddressMap.put("state",accountDetails.get("Billing_State"));
+customerAddressMap.put("country",accountDetails.get("Billing_Country"));
+customerAddressMap.put("zip_code",accountDetails.get("Billing_Code"));
+customerMap.put("customer_address",customerAddressMap);
+customerMap.put("customer_billing_address",customerAddressMap);
+customerPhoneMap = Map();
+customerPhoneMap.put("mobile",accountDetails.get("Phone"));
+customerPhoneMap.put("home","");
+customerPhoneMap.put("work","");
+customerMap.put("customer_contact_no",customerPhoneMap);
+//GET CUSTOM FIELDS
+zuperCustomerCustomFields = getUrl(URL_COPY + "/settings/custom_fields?original_template=true&module_name=CUSTOMER",headersMap);
+info zuperCustomerCustomFields;
+if(zuperCustomerCustomFields.get('type') == "success")
+{
+	customFieldsList = List();
+	customFields = zuperCustomerCustomFields.get('data');
+	for each  element in customFields
+	{
+		keyName = element.get("field_name");
+		zohoKeyName = replaceAll(keyName," ","_");
+		if(accountDetails.get(zohoKeyName) != null)
+		{
+			tempMap = Map();
+			tempMap.put("label",keyName);
+			tempMap.put("value",accountDetails.get(zohoKeyName));
+			customFieldsList.add(tempMap);
+		}
+	}
+	customerMap.put("custom_fields",customFieldsList);
+}
+info customerMap;
+paramsMap = Map();
+paramsMap.put("customer",customerMap);
+zuperId = null;
+//GET CUSTOMER WITH GIVEN ZOHO ACCOUNT ID
+zuperCustomersByTags = getUrl(URL_COPY + "/customers?filter.customer_tags=" + accountTag + "&page=1&count=1",headersMap);
+if(zuperCustomersByTags.get('type') == "success")
+{
+	custData = zuperCustomersByTags.get('data');
+	if(custData.size() > 0)
+	{
+		zuperContactId = custData.get(0).get("customer_uid");
+	}
+}
+if(zuperContactId != null)
+{
+	zuperCustomer = getUrl(URL_COPY + "/customers/" + zuperContactId,headersMap);
+	//CHECK IF RECORD ALREADY EXISTS
+	if(zuperCustomer.get('type') == "success")
+	{
+		zuperId = zuperContactId;
+	}
+}
+httpMethod = if(zuperId == null,"POST","PUT");
+URL = if(zuperId == null,URL_COPY + "/customers",URL_COPY + "/customers/" + zuperId);
+paramsMap.put("customer_uid",zuperId);
+resp = invokeUrl(URL,httpMethod,paramsMap.toString(),headersMap);
+customerUid = resp.get("customer_uid");
+info "customerAddedResp";
+info resp;
+// -----------Push customer ends--------------
+//-------Job Push starts
+zuperCategories = getUrl(URL_COPY + "/jobs/category",headersMap);
+jobCatId = null;
+jobCategoryVal = dealDetails.get(JOB_CATEGORY_FIELD_NAME);
+if(zuperCategories.get('type') == "success")
+{
+	cats = zuperCategories.get('data');
+	if(jobCategoryVal != null)
+	{
+		for each  element in cats
+		{
+			if(element.get("category_name").equalsIgnoreCase(jobCategoryVal))
+			{
+				jobCatId = element.get("category_uid");
+			}
+		}
+	}
+	if(jobCatId == null)
+	{
+		jobCatId = cats.get(0).get("category_uid");
+	}
+}
+info "jobCatId: " + jobCatId;
+if(jobCatId == null)
+{
+	info "jobCatId is null";
+	return;
+}
+quouteInfo = selectedQuoute.get(0);
+selectedQuoteId = quouteInfo.get("id").toString();
+info "quoteId: " + selectedQuoteId;
+jobMap = Map();
+jobMap.put("job_title",quouteInfo.get("Subject"));
+jobMap.put("job_category",jobCatId);
+jobMap.put("job_type","NEW");
+jobMap.put("job_priority","MEDIUM");
+jobMap.put("job_description",quouteInfo.get("Description"));
+createdTime = quouteInfo.get("Created_Time");
+time = toText(createdTime,'YYYY-MM-dd HH:mm:ss');
+info time;
+jobMap.put("scheduled_start_time",time);
+jobMap.put("scheduled_end_time",time);
+customerUid = if(customerUid == null,zuperId,customerUid);
+jobMap.put("customer_uid",customerUid);
+jobTag = "Zoho_Deal_" + zohoDealId + "_" + selectedQuoteId;
+tagsList = List();
+tagsList.add(jobTag);
+jobMap.put("job_tags",tagsList);
+customFieldsList = List();
+tempMap = Map();
+tempMap.put("label","Zoho Deal Id");
+tempMap.put("value",zohoDealId);
+customFieldsList.add(tempMap);
+tempMap = Map();
+tempMap.put("label","Zoho Quote Id");
+tempMap.put("value",selectedQuoteId);
+customFieldsList.add(tempMap);
+tempMap = Map();
+tempMap.put("label","Zoho Quote Number");
+tempMap.put("value",quouteInfo.get("Quote_Number"));
+customFieldsList.add(tempMap);
+// PUSH QUOTE SALES CHECKLIST INFORMATION 
+// Contract Type
+tempMap = Map();
+tempMap.put("label","Contract Type");
+tempMap.put("value",quouteInfo.get("Contract_Type"));
+customFieldsList.add(tempMap);
+// Payment Type
+tempMap = Map();
+tempMap.put("label","Payment Type");
+tempMap.put("value",quouteInfo.get("Payment_Type"));
+customFieldsList.add(tempMap);
+// IT Contact Name
+tempMap = Map();
+tempMap.put("label","IT Contact Name");
+tempMap.put("value",quouteInfo.get("IT_Contact_Phone_Number"));
+customFieldsList.add(tempMap);
+// IT Contact Phone Number
+tempMap = Map();
+tempMap.put("label","IT Contact Phone Number");
+tempMap.put("value",quouteInfo.get("IT_Contact_Phone_Number1"));
+customFieldsList.add(tempMap);
+// Is SMS Required
+tempMap = Map();
+tempMap.put("label","Is SMS Required");
+tempMap.put("value",quouteInfo.get("Is_SMS_Required"));
+customFieldsList.add(tempMap);
+// Expected_Install_Date
+tempMap = Map();
+tempMap.put("label","Expected Install Date");
+tempMap.put("value",quouteInfo.get("Expected_Install_Date"));
+customFieldsList.add(tempMap);
+// Funding Approval Number
+tempMap = Map();
+tempMap.put("label","Funding Approval Number");
+tempMap.put("value",quouteInfo.get("Funding_Approval_Number"));
+customFieldsList.add(tempMap);
+// Deposit/Install Amount
+tempMap = Map();
+tempMap.put("label","Deposit/Install Amount");
+tempMap.put("value",quouteInfo.get("Deposit_Amount"));
+customFieldsList.add(tempMap);
+// Deposit/Install Amount
+tempMap = Map();
+tempMap.put("label","Fax from Desktop");
+tempMap.put("value",quouteInfo.get("Fax_from_Desktop"));
+customFieldsList.add(tempMap);
+// SIP Trunk Expectation
+tempMap = Map();
+tempMap.put("label","SIP Trunk Expectation");
+tempMap.put("value",quouteInfo.get("SIP_Trunk_Expectation"));
+customFieldsList.add(tempMap);
+jobMap.put("custom_fields",customFieldsList);
+//------Handling Products-------
+partsArr = List();
+products = quouteInfo.get("Product_Details");
+if(products != null && products.size() > 0)
+{
+	zuperProductCategories = getUrl(URL_COPY + "/products/category",headersMap);
+	zupPdtcats = zuperProductCategories.get('data');
+	for each  element in products
+	{
+		pdtObj = element.get("product");
+		zPdtCode = pdtObj.get("Product_Code");
+		pdtAllDetails = zoho.crm.getRecordById("Products",pdtObj.get("id"));
+		pCatId = null;
+		if(zPdtCode != null)
+		{
+			zPushPdtId = null;
+			zuperPdtByCode = getUrl(URL_COPY + "/product?filter.product_id=" + zPdtCode + "&page=1&count=1",headersMap);
+			if(zuperPdtByCode.get('type') == "success")
+			{
+				zuPdtData = zuperPdtByCode.get('data');
+				if(zuPdtData.size() > 0)
+				{
+					zPushPdtId = zuPdtData.get(0).get("product_uid");
+					pCatId = zuPdtData.get(0).get("product_category").get("category_uid");
+				}
+			}
+			if(zPushPdtId == null)
+			{
+				pCategoryVal = pdtAllDetails.get(PRODUCT_CATEGORY_FIELD_NAME);
+				if(pCategoryVal != null)
+				{
+					for each  element in zupPdtcats
+					{
+						if(element.get("category_name").equalsIgnoreCase(pCategoryVal))
+						{
+							pCatId = element.get("category_uid");
+						}
+					}
+				}
+				if(pCatId == null)
+				{
+					pCatId = zupPdtcats.get(0).get("category_uid");
+				}
+				newPdtMap = Map();
+				newPdtMap.put("product_name",pdtAllDetails.get("Product_Name"));
+				newPdtMap.put("price",pdtAllDetails.get("Cost_Price"));
+				newPdtMap.put("currency",pdtAllDetails.get("$currency_symbol"));
+				newPdtMap.put("product_category",pCatId);
+				newPdtMap.put("product_description",pdtAllDetails.get("Description"));
+				newPdtMap.put("product_id",zPdtCode);
+				newPdtMap.put("product_type","PRODUCT");
+				addPdtMap = Map();
+				addPdtMap.put("product",newPdtMap);
+				pdtAddResp = invokeUrl(URL_COPY + "/product","POST",addPdtMap.toString(),headersMap);
+				info "pdtAddResp";
+				info pdtAddResp;
+				if(pdtAddResp.get('type') == "success")
+				{
+					zPushPdtId = pdtAddResp.get("data").get("product_uid");
+				}
+			}
+			if(zPushPdtId != null)
+			{
+				zpMap = Map();
+				zpMap.put("product_category",pCatId);
+				zpMap.put("product_id",zPdtCode);
+				zpMap.put("product_name",pdtAllDetails.get("Product_Name"));
+				zpMap.put("product_uid",zPushPdtId);
+				zpMap.put("quantity",element.get("quantity"));
+				zpMap.put("price",element.get("unit_price"));
+				partsArr.add(zpMap);
+			}
+		}
+	}
+}
+jobMap.put("products",partsArr);
+info "quouteInfo";
+info quouteInfo;
+zuperJId = null;
+zuperJobId = null;
+//GET JOB WITH GIVEN ZOHO JOB ID
+zuperJobsByTags = getUrl(URL_COPY + "/jobs?filter.job_tags=" + jobTag + "&page=1&count=1",headersMap);
+if(zuperJobsByTags.get('type') == "success")
+{
+	jobData = zuperJobsByTags.get('data');
+	if(jobData.size() > 0)
+	{
+		zuperJId = jobData.get(0).get("job_uid");
+	}
+}
+httpMethod = if(zuperJId == null,"POST","PUT");
+billingAddressMap = Map();
+billingAddressMap.put("street",quouteInfo.get("Billing_Street"));
+billingAddressMap.put("landmark","");
+billingAddressMap.put("city",quouteInfo.get("Billing_City"));
+billingAddressMap.put("state",quouteInfo.get("Billing_State"));
+billingAddressMap.put("country",quouteInfo.get("Billing_Country"));
+billingAddressMap.put("zip_code",quouteInfo.get("Billing_Code"));
+shippingAddressMap = Map();
+shippingAddressMap.put("street",quouteInfo.get("Shipping_Street"));
+shippingAddressMap.put("landmark","");
+shippingAddressMap.put("city",quouteInfo.get("Shipping_City"));
+shippingAddressMap.put("state",quouteInfo.get("Shipping_State"));
+shippingAddressMap.put("country",quouteInfo.get("Shipping_Country"));
+shippingAddressMap.put("zip_code",quouteInfo.get("Shipping_Code"));
+jobParamsMap = Map();
+if(zuperJId != null)
+{
+	jobMap.put("job_uid",zuperJId);
+	jobParamsMap.put("job_uid",zuperJId);
+	jobMap.put("customer_billing_address",billingAddressMap);
+	jobMap.put("customer_address",shippingAddressMap);
+}
+else
+{
+	custM = Map();
+	custM.put("customer_billing_address",billingAddressMap);
+	custM.put("customer_address",shippingAddressMap);
+	jobMap.put("customer",custM);
+}
+jobParamsMap.put("job",jobMap);
+info jobParamsMap;
+resp = invokeUrl(URL_COPY + "/jobs",httpMethod,jobParamsMap.toString(),headersMap);
+info resp;

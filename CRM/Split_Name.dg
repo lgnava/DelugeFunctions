@@ -1,0 +1,12 @@
+// SAM RIVERA , EMET 
+//Lead_ID = 1958499000003642153;
+Lead = zoho.crm.getRecordById("Leads",Lead_ID);
+if(Lead.get("First_Name") == Lead.get("Last_Name"))
+{
+	firstName = Lead.get("Full_Name").left(Lead.get("Full_Name").indexOf(" "));
+	lastName = Lead.get("Last_Name").right(Lead.get("Last_Name").length() - firstName.length() - 1);
+	m = Map();
+	m.put("First_Name",firstName);
+	m.put("Last_Name",lastName);
+	info zoho.crm.updateRecord("Leads",Lead_ID,m);
+}

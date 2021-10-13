@@ -1,0 +1,25 @@
+// Ip address for Web development
+lead = zoho.crm.getRecordById("Leads",Lead_ID);
+domain = lead.get("Website");
+domain = domain.replaceall("https://","");
+domain = domain.replaceall("http://","");
+api_location = "https://www.whoisxmlapi.com/whoisserver/DNSService?";
+api_credential = "at_ieoJqdb02l0C6ouSuZHvHHKWUXzam";
+response = invokeurl
+[
+	url :api_location + "apiKey=" + api_credential + "&domainName=" + domain + "&type=_all&outputFormat=JSON"
+	type :GET
+];
+dns_records = response.get("DNSData").get("dnsRecords");
+for each  record in dns_records
+{
+	if(!record.get("dnsType").equals("A"))
+	{
+		continue;
+	}
+	ip = record.get("address");
+}
+m = Map();
+m.put("IP_address",ip);
+upd_record = zoho.crm.updateRecord("Leads",Lead_ID,m);
+info upd_record;

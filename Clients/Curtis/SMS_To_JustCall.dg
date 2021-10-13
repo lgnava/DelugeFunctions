@@ -1,0 +1,20 @@
+headermap = Map();
+headermap.put("Content-Type", "application/json");
+headermap.put("Authorization", "eb8a16d9b544077777207385e5db712d9bf5f533:12cbafef273fe94d3019ba439bbd4021d0bf3f26");
+
+rowData = Map();
+
+rowData.put("data-raw",'{"from": "+17207024200","to": "+525554545542","body": "hi luis 2"}');
+
+
+update = invokeurl
+[
+url: "https://api.justcall.io/v1/texts/new?data=from"
+type: POST
+headers: headermap
+parameters: "{\"from\": \"+17207024200\",\n    \"to\": \"+525554545542\",\n    \"body\": \"hi luis 4\"\n}"
+];
+info update;
+
+
+return "";

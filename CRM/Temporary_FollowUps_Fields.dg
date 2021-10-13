@@ -1,0 +1,49 @@
+/* 
+Función para tomar los campos temporales y guardarlos en los reales de followup, 
+al terminar, limpia los temporales. 
+Se dispara en el after de cada attempt
+
+Dos versiones. Plug in y Systema
+*/
+
+
+/* Version 1 */
+Lead = zoho.crm.getRecordById('Leads',lead.get("Leads.ID"));											
+m = Map();											
+
+if(!Lead.get("Followup_Date").isNull())											
+{											
+	m.put("Followup_Time",Lead.get("Followup_Date"));										
+	m.put("Followup_Date","");										
+}											
+if(!Lead.get("Followup_Notes").isNull())											
+{											
+	notesMap = {"Parent_Id":lead.get("Leads.ID"),"Note_Title":"FollowupNote","Note_Content":Lead.get("Followup_Notes"),"$se_module":"Leads"};										
+	notesResponse = zoho.crm.createRecord("Notes",notesMap);
+	m.put("Notes",Lead.get("Followup_Notes"));											
+	m.put("Followup_Notes","");													
+}				
+
+zoho.crm.updateRecord("Leads",lead.get("Leads.ID"),m);
+/* Version 1 Fin */
+
+
+/* Version 2 */
+Lead = zoho.crm.getRecordById('Leads',LeadID);											
+m = Map();											
+
+if(!Lead.get("Followup_Date").isNull())											
+{											
+	m.put("Followup_Time",Lead.get("Followup_Date"));										
+	m.put("Followup_Date","");										
+}											
+if(!Lead.get("Followup_Notes").isNull())											
+{											
+	notesMap = {"Parent_Id":LeadID,"Note_Title":"FollowupNote","Note_Content":Lead.get("Followup_Notes"),"$se_module":"Leads"};										
+	notesResponse = zoho.crm.createRecord("Notes",notesMap);
+	m.put("Notes",Lead.get("Followup_Notes"));											
+	m.put("Followup_Notes","");													
+}				
+
+zoho.crm.updateRecord("Leads",LeadID,m);
+/* Version 2 Fin */

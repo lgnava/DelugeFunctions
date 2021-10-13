@@ -1,0 +1,1500 @@
+Create Note	notesMap = {"Parent_Id":"2880896000005367001","Note_Title":"Zoho CRM Sample Note","Note_Content":"test 2","$se_module":"Potentials"};								Lead = zoho.crm.getRecordById("Leads", LeadID);		
+	notesResponse = zoho.crm.create("Notes",notesMap);								Name = "";		
+	info notesResponse;								if(!Lead.get("First_Name").isNull())		
+									{		
+										Name = Lead.get("First_Name");	
+Search	//pull the jobs related to the payor								}		
+	PayorRelatedJobs = zoho.crm.searchRecords("Potentials","(Account_Name:equals:" + payorID + ")");								if(!Lead.get("Last_Name").isNull())		
+	for each  job in PayorRelatedJobs								{		
+	{									Name = Name + " " + Lead.get("Last_Name");	
+		JobStage = job.get("Stage");							}		
+		if(JobStage != "Job Closed")							Comment = Name + " was not contacted for 2 months. Please connect with the lead”;		
+		{							notesMap = {"Parent_Id":LeadID,"Note_Title":"No Action For Over 60 Days","Note_Content":Comment,"$se_module":"Leads"};		
+			jobID = job.get("id");						notesResponse = zoho.crm.create("Notes",notesMap);		
+			Note_Title = "Credit Card On File";						info notesResponse;		
+			Note_Content = "The client gave us his credit card information. The office will do the billing in this case. Please give us a call when you are done so we can collect the payment";						m = map();		
+			notesMap = {"Parent_Id":jobID,"Note_Title":Note_Title,"Note_Content":Note_Content,"$se_module":"Potentials"};						m.put("Followup_Comments",Comment);		
+			notesResponse = zoho.crm.create("Notes",notesMap);						res = zoho.crm.updateRecord("Leads", LeadID, m);		
+		}									
+	}										
+											
+											
+											
+											
+Webhook Json											
+											
+//2880896000006740236											
+accMap = zoho.crm.getRecordById("Accounts",PayorID);											
+//info accMap;											
+if(!accMap.isEmpty())											
+{											
+	payload = Map();										
+	payload.put("Account_ID",PayorID);										
+	payload.put("First_Name",accMap.get("First_Name"));										
+	payload.put("Last_Name",accMap.get("Last_Name"));										
+	payload.put("Billing_City",accMap.get("Billing_City"));										
+	payload.put("Billing_Country",accMap.get("Billing_Country"));										
+	payload.put("Billing_State",accMap.get("Billing_State"));										
+	payload.put("Birth_Date",accMap.get("Birth_Date"));										
+	payload.put("Email",accMap.get("Email"));										
+	payload.put("Marketing_Source",accMap.get("Marketing_Source"));										
+	payload.put("Mobile_Phone",accMap.get("Mobile_Phone"));										
+	payload.put("Address",accMap.get("Address"));										
+	payload.put("Account_Name",accMap.get("Account_Name"));										
+	payload.put("Payor_Postal_Code",accMap.get("Payor_Postal_Code"));										
+	payload.put("Payor_Type1",accMap.get("Payor_Type1"));										
+	payload.put("Phone",accMap.get("Phone"));										
+	headerMap = Map();										
+	headerMap.put("Content-Type","application/json");										
+	headerMap.put("charset","UTF-8");										
+	response = postUrl("https://torch.repaircare.ca/webhook/update-payor",payload.toString(),headerMap,false);										
+	//response = postUrl("http://requestbin.fullcontact.com/px52cepx",payload.toString(),headerMap,false);										
+	//info response;										
+}											
+//return response.get("responseCode");											
+/*											
+											
+{"Mobile_Phone":null,"Owner":{"name":"Lior Izik","id":"2880896000000136011"},"Birth_Date":"1969-12-31","Payor_Type1":{"name":"COD","id":"2880896000001610054"},"CVV":null,"Email":"koby@no.ca","Description":null,"Expiry_Date":null,"$currency_symbol":"CA$","Address":"10 blue grouse rd","Website":null,"Last_Activity_Time":"2018-11-10T08:04:14+00:00","First_Name":"koby","Record_Image":null,"Credit_Card_Number":null,"Modified_By":{"name":"Lior Izik","id":"2880896000000136011"},"Marketing_Source":{"name":"Google","id":"2880896000000482003"},"$process_flow":false,"Exchange_Rate":1,"Phone":"(416) 894-2222","Currency":"CAD","Billing_Country":"Canada","Account_Name":"koby lerner","id":"2880896000006740236","$approved":true,"Credit_Card_Name":null,"$approval":{"delegate":false,"approve":false,"reject":false,"resubmit":false},"Modified_Time":"2018-11-10T08:04:14+00:00","Credit_Card_Action":null,"Created_Time":"2018-10-27T14:24:08+00:00","$editable":true,"Billing_City":"maple","sham":null,"Last_Name":"lerner","Payor_Postal_Code":"l6a0t8","Billing_State":"Ontario","Created_By":{"name":"Lior Izik","id":"2880896000000136011"},"Tag":[],"Created_Date":"27/10/2018"}											
+*/											
+											
+											
+notes	Notes = zoho.crm.getRelatedRecords("Notes","Potentials",JobID);										
+											
+											
+											
+//AP Stage Add Timestamp											
+workflowspace.AP_Stage_Add_Timestamp(id,stage);											
+//AP Create Tasks											
+if(input.stage = "Application" && input.ClientRating != "D")											
+{											
+	workflowspace.AP_Create_Tasks(id,stage,leadtype,"");										
+}											
+//Pull from Contact to Application											
+workflowspace.update_contact_info_on_contact_change(id,contactid);											
+//set pre-approval date 120 days away											
+if(input.leadtype = "Pre-Approval")											
+{											
+	closingdate = zoho.currenttime.addDay(120);										
+	updateclosedate = zoho.crm._updateRecord("Potentials",id.toString(),Map:String({"Closing Date":closingdate}));										
+}											
+											
+											
+Delete											
+deleteResp = zoho.crm.invokeConnector("crm.delete",{"module":"Leads","id":leadId});											
+info deleteResp;											
+											
+											
+Events							Send notifications to participants				
+leadDetails = zoho.crm.getRecordById("Leads",leadIdLong.toLong());							//DealID = 4230695000000288243;				
+eventtitle = "Follow up Required with " + leadDetails.get("First_Name") + " " + leadDetails.get("Last_Name");							Trans = zoho.crm.getRecordById("Deals",DealID);				
+date = ifnull(leadDetails.get("Follow_up_Required"),"");							EventDate = Trans.get("Effective_Date");				
+remindertime = date.toTime("yyyy-MM-dd'T'HH:mm:ss").subMinutes(0).toString("yyyy-MM-dd'T'HH:mm:ss'-05:00'");							FieldName = "Effective Date";				
+EventsMap = Map();							DealName = Trans.get("Deal_Name");				
+EventsMap.put("Start_DateTime",date);							eventtitle = FieldName + " - " + DealName;				
+EventsMap.put("What_Id",input.leadIdLong);							info Trans;				
+EventsMap.put("$se_module","Leads");							start_time = Trans.get("Effective_Date").toString("yyyy-MM-dd");				
+EventsMap.put("Event_Title",eventtitle);							end_time = Trans.get("Effective_Date").toString("yyyy-MM-dd");				
+EventsMap.put("End_DateTime",date.toTime("yyyy-MM-dd'T'HH:mm:ss").addMinutes(5).toString("yyyy-MM-dd'T'HH:mm:ss'-05:00'"));							EventsMap = Map();				
+EventsMap.put("Remind_At","5 mins");							EventsMap.put("Start_DateTime",start_time + "T08:00:00");				
+EventsMap.put("All_day",false);							EventsMap.put("What_Id",DealID);				
+EventsCreate = zoho.crm.create("Events",EventsMap);							EventsMap.put("$se_module","Deals");				
+info EventsCreate;							EventsMap.put("send_notification",true);				
+							EventsMap.put("Event_Title",eventtitle);				
+Zoho Projects Template From CRM							EventsMap.put("End_DateTime",end_time + "T08:01:00");				
+url = "https://projects.zoho.com/portal/" + PortalName + "/api/private/xml/project/getprojtemplates";											
+params = {"authtoken":AuthToken};							if(!Trans.get("Contact_Name").isNull())				
+res = postUrl(url,params);							{				
+projectId = res.executeXPath("/response/result/ProjectDetails/ProjectDetail[ project_name  = '" + Template + "'] /project_id/text()");								partList = List();			
+info projectId;								partMap = Map();			
+params.put("projTitle",ProjName);								partMap.put("type","contact");			
+params.put("projDesc",Description);								partMap.put("participant",ifnull(Trans.get("Contact_Name"),"").get("id"));			
+params.put("templateId",projectId);								partList.add(partMap);			
+resp = postUrl("https://projects.zoho.com/portal/" + PortalName + "/api/private/xml/project/addprojwithtemplate",params);								EventsMap.put("Participants",partList);			
+m = Map();							}				
+m.put("Log",resp);											
+resp1 = zoho.crm.updateRecord("Products",ProductID,m);							EventsMap.put("Owner",Trans.get("Owner").get("id"));				
+							EventsMap.put("Remind_At","5 mins");				
+							EventsMap.put("All_day",false);				
+							EventsCreate = zoho.crm.createRecord("Events",EventsMap);				
+//add tag - create a connection from developer space with							info EventsMap;				
+mp = Map();							zohocmrconnection				
+mp.put("tag_names","TB");							This link name will used in script				
+response = invokeurl							Scopes				
+[							ZohoCRM.modules.ALL, ZohoCRM.functions.execute.READ, ZohoCRM.functions.execute.CREATE				
+url :"https://www.zohoapis.com/crm/v2/Temp/" + TempID + "/actions/add_tags?"							Service Name				
+type :POST							zlabs_integration				
+parameters:mp							Status				
+connection:zohocmrconnection							Connected				
+];											
+info response;											
+											
+											
+											
+											
+get ID from created record	newaccountId = AccountCreate.get("Id");										
+											
+											
+view											
+techs = zoho.crm.getRecords("Vendors",0,200,{"cvid":4262329000000367005});											
+for each  tech in techs											
+{											
+											
+											
+multi select											
+if(Deal.get("Praxis_Sub_Dashboard").contains("Level 1: Pre-Built Dashboards - Managed Services"))											
+											
+copy picture image											
+This is the sample to copy Record Image fro one record to another record.											
+											
+leadid = "2985578000002736022";											
+leadid1 = "2985578000002114001";											
+resp = invokeurl											
+[											
+url: "https://www.zohoapis.com/crm/v2/Leads/" + leadid + "/photo"											
+type: GET											
+connection : "xxxxxxxxxxx"											
+];											
+files = List();											
+resp.setParamName("file");											
+files.add(resp);											
+resp1 = invokeurl											
+[											
+url: "https://www.zohoapis.com/crm/v2/Leads/" + leadid1 + "/photo"											
+type: POST											
+files : files											
+connection : "xxxxxxxxxxx"											
+];											
+info resp1;											
+											
+											
+Replace 'xxxxxxxxxxx' with the connection api name.											
+Steps for create connections:											
+1) Navigate to Settings --> Developer Space --> Connections											
+2) Click " Add Connection"											
+3) Choose Zoho OAuth											
+4) Choose all the scope for ZohoCRM											
+5) Click " Create and Connect"											
+6) Click " Connect" and click " Agree"											
+											
+											
+											
+Today	zoho.currentdate										
+	zoho.currenttime										
+											
+											
+											
+Create custom button							Reviews - Ask For Google Review JJMT Task				
+Lead = zoho.crm.getRecordById("Leads",LeadID.toLong());							Task_Name = "Slybroadcast Birthday Sent";				
+EventsMap = Map();											
+EventsMap.put("Due_Date",today.toString("yyyy-MM-dd"));							EventsMap = Map();				
+EventsMap.put("What_Id",LeadID);							EventsMap.put("Due_Date",zoho.currentdate.toString("yyyy-MM-dd"));				
+EventsMap.put("$se_module","Leads");							EventsMap.put("Who_Id",ContactID);				
+EventsMap.put("Subject","Get More Phone Numbers");							EventsMap.put("$se_module","Contacts");				
+EventsMap.put("Owner",3592863000000758001);							EventsMap.put("Subject",Task_Name);				
+EventsMap.put("Task_Type","ADMIN - RESEARCH");							EventsMap.put("Status","Completed");				
+EventsCreate = zoho.crm.createRecord("Tasks",EventsMap);							EventsMap.put("Task_Type","Automation Task");				
+info EventsCreate;							EventsCreate = zoho.crm.createRecord("Tasks",EventsMap);				
+return "Success";							info EventsCreate;				
+											
+											
+											
+											
+Copy related modules from one module to another											
+relatedcontacts = zoho.crm.getRelatedRecords("Contacts", ("Accounts"), accountId.toLong());											
+//info relatedcontacts;											
+for each ele in relatedcontacts											
+{											
+mp=map();											
+mp.put("Contact_Type", input.type );											
+update = zoho.crm.update("Contacts", ele.get("id"), mp);											
+info mp;											
+info update;											
+}											
+											
+											
+variable based											
+//2962855000001008084											
+CalledCall = zoho.crm.getRecordById("Called_Calls", CalledCallID.tolong());											
+VariablesList = List:String({"First_Name", "Last_Name"});											
+m=map();											
+for each var in VariablesList											
+{											
+	if(!CalledCall.get(var).isNull())										
+	{										
+		m.put(var,CalledCall.get(var));									
+	}										
+}											
+info m;											
+return "";											
+											
+											
+											
+											
+create invoice											
+											
+											
+											
+											
+											
+											
+											
+											
+											
+Unique leads email website forms module											
+//3967880000000492001											
+RecordEmail = "<h1>Duplicate Lead Alert!</h1><p>Lead Details</p>";											
+Lead = zoho.crm.getRecordById("Website_Forms",LeadID);											
+VariablesList = List:String({"First_Name","Last_Name","Email","Guests_Count","Event_Date","Date_Flexible","Lead_Source","Lead_Status","Message","Phone","Preferred_Language","Event_Type"});											
+m = Map();											
+for each  var in VariablesList											
+{							Geoff function				
+	if(!Lead.get(var).isNull())						//ContactID = 4470185000001331110;				
+	{						Contact = zoho.crm.getRecordById("Contacts",ContactID);				
+		m.put(var,Lead.get(var));					TimeZone = "";				
+		RecordEmail = RecordEmail + var + ": " + Lead.get(var) + "<br />";					if(Contact.get("Appt_Time_Zone") == "Pacific Standard Time (PST)")				
+	}						{				
+}								TimeZone = "-07:00";			
+result = zoho.crm.createRecord("Leads",m);							}				
+if(result.get("id").isNull())							if(Contact.get("Appt_Time_Zone") == "Central Standard Time (CST)")				
+{							{				
+	sendmail							TimeZone = "-05:00";			
+	[						}				
+		from :zoho.adminuserid					if(Contact.get("Appt_Time_Zone") == "Eastern Standard Time (EST)")				
+		to :"assistant@pelazzio.com"					{				
+		subject :"Duplicate Lead Alert " + Lead.get("First_Name") + " " + Lead.get("Last_Name")						TimeZone = "-04:00";			
+		message :RecordEmail					}				
+	]						EventDate = Contact.get("Meeting_Start_Time");				
+}							StartTime = EventDate.toTime("yyyy-MM-dd'T'HH:mm:ss").toString("yyyy-MM-dd'T'HH:mm:ss'" + TimeZone + "'");				
+							info StartTime;				
+							info StartTime;				
+copy value from one module to another							if(Contact.get("Duration") == "30 Min")				
+apps = zoho.crm.getRecords("Deals",0,200,{"cvid":1861472000019859046});							{				
+for each  app in apps								EndTime = EventDate.toTime("yyyy-MM-dd'T'HH:mm:ss").addMinutes(30).toString("yyyy-MM-dd'T'HH:mm:ss'" + TimeZone + "'");			
+{								info EndTime;			
+	if(!app.get("Contact_Name").isNull())						}				
+	{						if(Contact.get("Duration") == "1 Hour")				
+	Contact_Name = app.get("Contact_Name");						{				
+	Contact_Id = Contact_Name.get("id").toLong();							EndTime = EventDate.toTime("yyyy-MM-dd'T'HH:mm:ss").addMinutes(60).toString("yyyy-MM-dd'T'HH:mm:ss'" + TimeZone + "'");			
+	info Contact_Id;							info EndTime;			
+	Contact = zoho.crm.getRecordById("Contacts", Contact_Id);						}				
+		if(!Contact.get("Email").isNull())					if(Contact.get("Duration") == "1.5 Hours")				
+		{					{				
+			m = map();					EndTime = EventDate.toTime("yyyy-MM-dd'T'HH:mm:ss").addMinutes(90).toString("yyyy-MM-dd'T'HH:mm:ss'" + TimeZone + "'");			
+			m.put("Email",Contact.get("Email"));					info EndTime;			
+			res = zoho.crm.updateRecord("Deals", app.get("id"), m);				}				
+			info res;				if(Contact.get("Duration") == "2 Hours")				
+		}					{				
+	}							EndTime = EventDate.toTime("yyyy-MM-dd'T'HH:mm:ss").addMinutes(120).toString("yyyy-MM-dd'T'HH:mm:ss'" + TimeZone + "'");			
+								info EndTime;			
+}							}				
+							eventtitle = replaceAll(Contact.get("Invite_Subject"),"acct",Contact.get("Account_Name").get("name") + " (" + Contact.get("First_Name") + " " + Contact.get("Last_Name") + ")");				
+							/*				
+Change Date											
+Contacts = zoho.crm.getRecords("Contacts",0,200,{"cvid":1861472000019871003});							- location				
+for each  Contact in Contacts											
+{							Appt_Priority				
+		if(!Contact.get("Next_Birthday").isNull())					Appt Description				
+		{									
+			ContactID = Contact.get("id");								
+			m = map();				*/				
+			Date_of_Birth = Contact.get("Next_Birthday");				EventsMap = Map();				
+			Year = Date_of_Birth.getYear();				EventsMap.put("Start_DateTime",StartTime);				
+			Month = Date_of_Birth.getMonth();				EventsMap.put("Who_Id",ContactID);				
+			Day = Date_of_Birth.getDay();				EventsMap.put("$se_module","Contacts");				
+			NewDate = Year + "-" + Month + "-" + Day;				EventsMap.put("Venue",Contact.get("Type"));				
+			NewDate = NewDate.toString("yyyy-MM-dd");				EventsMap.put("Description",Contact.get("Appt_Notes"));				
+			NewDate = NewDate.addYear(1);				EventsMap.put("send_notification",true);				
+			m.put("Next_Birthday",NewDate);				EventsMap.put("Event_Title",eventtitle);				
+			res = zoho.crm.updateRecord("Contacts", ContactID, m);				EventsMap.put("End_DateTime",EndTime);				
+			info res;				if(Contact.get("Notify_Participant") == TRUE)				
+		}					{				
+}								partList = List();			
+								partMap = Map();			
+								partMap.put("type","contact");			
+								partMap.put("participant",ContactID);			
+add subscription								partList.add(partMap);			
+//QuoteID = 3967880000000319001;								EventsMap.put("Participants",partList);			
+Quote = zoho.crm.getRecordById("Quotes",QuoteID);							}				
+Contact_Name = Quote.get("Contact_Name");							EventsMap.put("Owner",Contact.get("Owner").get("id"));				
+ContactID = Contact_Name.get("id");							EventsMap.put("Remind_At","5 mins");				
+Contact = zoho.crm.getRecordById("Contacts",ContactID);							EventsMap.put("All_day",false);				
+plan_description = Contact_Name.get("name") + " Subscription";							EventsCreate = zoho.crm.createRecord("Events",EventsMap);				
+//Account = "680591097"; //Live							info EventsMap;				
+AccountNumber = "689802580";											
+//Test											
+Subscriptions = zoho.subscriptions.getList("Subscriptions",AccountNumber);											
+plan_map = Map();											
+plan_map.put("plan_code","Events");											
+plan_map.put("plan_description",plan_description);											
+plan_map.put("price",Quote.get("Amount_Per_Installment"));											
+plan_map.put("setup_fee",Quote.get("Downpayment"));											
+plan_map.put("quantity",1);											
+plan_map.put("billing_cycles",Quote.get("Number_Of_Installments"));											
+plan_map.put("trial_days",0);											
+subsc_map = Map();											
+//subsc_map.put("customer_id",1667911000000147020); //live											
+subsc_map.put("customer_id",Quote.get("Subscription_Contact_ID"));											
+//test											
+subsc_map.put("auto_collect",false);											
+subsc_map.put("plan",plan_map);											
+//subsc_map.put("addons",addon_json);											
+subsc_map.put("is_taxable",true);											
+//subsc_map.put("reference_id",customer_reference_number);											
+//subsc_map.put("tax_id","1005984000000448009");											
+Today = zoho.currentdate;											
+Today = Today.toString("yyyy-MM-dd");											
+subsc_map.put("starts_at",Today);											
+//res = zoho.subscriptions.create("Subscriptions","680591097",subsc_map);//live											
+res = zoho.subscriptions.create("Subscriptions",AccountNumber,subsc_map);											
+//test											
+//info res;											
+/*											
+{"code":0,"message":"success","subscriptions":[],"page_context":{"page":1,"per_page":200,"has_more_page":false,"report_name":"Subscriptions","applied_filter":"SubscriptionStatus.All","custom_fields":[],"sort_column":"created_time","sort_order":"A"}}											
+											
+											
+{"Downpayment":296.1,"Owner":{"name":"Amin Esmaeili","id":"3967880000000208013"},"Discount":0,"Description":null,"$currency_symbol":"$","Create_Subscription_Automatically":null,"Number_Of_Installments":5,"Tax":0,"Modified_By":{"name":"Amin Esmaeili","id":"3967880000000208013"},"$converted":true,"$process_flow":false,"Deal_Name":{"name":"Joe Joshi","id":"3967880000000318035"},"Price_Breakdown_For_The_Client":"Down Payment: $296.10\nInstallment 1: $500\nInstallment 2: $500\nInstallment 3: $500\nInstallment 4: $500\nInstallment 5: $500","Currency":"USD","Team":null,"Account_Name":null,"id":"3967880000000319001","$approved":true,"Quote_Stage":"Draft","Grand_Total":1480.5,"$approval":{"delegate":false,"approve":false,"reject":false,"resubmit":false},"Modified_Time":"2019-06-12T13:57:14-05:00","Adjustment":0,"Lead_Name":null,"Created_Time":"2019-05-11T16:43:21-05:00","Terms_and_Conditions":null,"Amount_Per_Installment":500,"Sub_Total":1480.5,"$editable":true,"Product_Details":[{"product":{"Product_Code":null,"Currency":"USD","name":"Tea & Coffee Station","id":"3967880000000308110"},"quantity":1,"Discount":0,"total_after_discount":1.5,"net_total":1.5,"book":null,"Tax":0,"list_price":1.5,"unit_price":1.5,"quantity_in_stock":-1,"total":1.5,"id":"3967880000000319003","product_description":"null","line_tax":[]},{"product":{"Product_Code":null,"Currency":"USD","name":"Soft Drinks","id":"3967880000000308109"},"quantity":1,"Discount":0,"total_after_discount":1.75,"net_total":1.75,"book":null,"Tax":0,"list_price":1.75,"unit_price":1.75,"quantity_in_stock":-1,"total":1.75,"id":"3967880000000319005","product_description":"null","line_tax":[]},{"product":{"Product_Code":null,"Currency":"USD","name":"Sound System (Amps, Mixer, Speakers, Microphone)","id":"3967880000000308095"},"quantity":1,"Discount":0,"total_after_discount":175,"net_total":175,"book":null,"Tax":0,"list_price":175,"unit_price":175,"quantity_in_stock":-1,"total":175,"id":"3967880000000319007","product_description":"null","line_tax":[]},{"product":{"Product_Code":null,"Currency":"USD","name":"Karaoke Service Entire Event","id":"3967880000000308094"},"quantity":1,"Discount":0,"total_after_discount":300,"net_total":300,"book":null,"Tax":0,"list_price":300,"unit_price":300,"quantity_in_stock":-1,"total":300,"id":"3967880000000319009","product_description":"null","line_tax":[]},{"product":{"Product_Code":null,"Currency":"USD","name":"Additional Hours of DJ","id":"3967880000000308093"},"quantity":1,"Discount":0,"total_after_discount":300,"net_total":300,"book":null,"Tax":0,"list_price":300,"unit_price":150,"quantity_in_stock":-1,"total":300,"id":"3967880000000319011","product_description":"null","line_tax":[]},{"product":{"Product_Code":null,"Currency":"USD","name":"DJ Service for 4 hours","id":"3967880000000308092"},"quantity":1,"Discount":0,"total_after_discount":700,"net_total":700,"book":null,"Tax":0,"list_price":700,"unit_price":700,"quantity_in_stock":-1,"total":700,"id":"3967880000000319013","product_description":"null","line_tax":[]},{"product":{"Product_Code":null,"Currency":"USD","name":"Colored Napkins","id":"3967880000000308073"},"quantity":1,"Discount":0,"total_after_discount":1.25,"net_total":1.25,"book":null,"Tax":0,"list_price":1.25,"unit_price":1.25,"quantity_in_stock":-2,"total":1.25,"id":"3967880000000319015","product_description":"null","line_tax":[]},{"product":{"Product_Code":null,"Currency":"USD","name":"Napkin Rings (Gold or Silver)","id":"3967880000000308072"},"quantity":1,"Discount":0,"total_after_discount":1,"net_total":1,"book":null,"Tax":0,"list_price":1,"unit_price":1,"quantity_in_stock":-1,"total":1,"id":"3967880000000319017","product_description":"null","line_tax":[]}],"Subject":"Venue Quote - Joe Joshi","Contact_Name":{"name":"Joe Joshi","id":"3967880000000318031"},"$line_tax":[],"Tag":[],"Created_By":{"name":"Amin Esmaeili","id":"3967880000000208013"}}											
+*/											
+											
+											
+											
+amin installments											
+//3967880000000743042											
+Quote = zoho.crm.getRecordById("Quotes",QuoteID);											
+if(Quote.get("Number_Of_Installments").isNull())											
+{											
+	Number_Of_Installments = 10;										
+}											
+else											
+{											
+	Number_Of_Installments = Quote.get("Number_Of_Installments");										
+}											
+ContactDate = Quote.get("Contract_Date");											
+ContactDate = ContactDate.toString("yyyy-MM-dd").subDay(1);											
+ContactDate = ContactDate.addDay(1);											
+//info ContactDate;											
+Price_Breakdown_For_The_Client = "";											
+Installments = List:Int();											
+Installments = {1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30};											
+m = Map();											
+if(!Quote.get("Grand_Total").isNull())											
+{											
+	Grand_Total = Quote.get("Grand_Total");										
+	//info "Grand_Total: " + Quote.get("Grand_Total");										
+	Down = Grand_Total * 0.2;										
+	info "Original Down = " + Down;										
+	Installments1 = Grand_Total - Down;										
+	info "Original Installments Total = " + Installments1;										
+	Amount_Per_Installment = Installments1 / Number_Of_Installments;										
+	info "Amount_Per_Installment: " + Amount_Per_Installment;										
+	info "Number_Of_Installments: " + Number_Of_Installments;										
+	DownNew = Down - Amount_Per_Installment;										
+	info "DownNew: " + DownNew;										
+	NewInstallments = Grand_Total - DownNew;										
+	info "NewInstallments: " + NewInstallments;										
+	CalcNumber_Of_Installments = Number_Of_Installments + 1;										
+	Amount_Per_Installment = NewInstallments / CalcNumber_Of_Installments;										
+	Price_Breakdown_For_The_Client = "Down Payment: $" + DownNew.round(2) + " Due on " + ContactDate + "\n";										
+	for each  Installment in Installments										
+	{										
+		if(Installment <= CalcNumber_Of_Installments)									
+		{									
+			Price_Breakdown_For_The_Client = Price_Breakdown_For_The_Client + "Installment " + Installment + ": $" + Amount_Per_Installment.round(2) + " Due on " + ContactDate + "\n";								
+		}									
+		ContactDate = ContactDate.addMonth(1);									
+	}										
+	m.put("Downpayment",DownNew.round(2));										
+	m.put("Number_Of_Installments",Number_Of_Installments);										
+	m.put("Price_Breakdown_For_The_Client",Price_Breakdown_For_The_Client);										
+	m.put("Amount_Per_Installment",Amount_Per_Installment.round(2));										
+	m.put("Number_Of_Installments_Subscriptions",CalcNumber_Of_Installments);										
+	res = zoho.crm.updateRecord("Quotes",QuoteID,m);										
+}											
+											
+											
+											
+copy from relationship module											
+//lead 3967880000000819055											
+//contact 3967880000000855804											
+Contact = zoho.crm.getRecordById("Contacts", ContactID);											
+The_Lead_ID = Contact.get("The_Lead_ID");											
+Groups_Leads = zoho.crm.searchRecords("Groups_Leads","(Leads:equals:" + The_Lead_ID + ")");											
+for each  Groups in Groups_Leads											
+{											
+	m = map();										
+	Event_Group = Groups.get("Event_Groups");										
+	Event_Group = Event_Group.get("id");										
+	m.put("Event_Groups",Event_Group);										
+	m.put("Contacts",ContactID);										
+	res = zoho.crm.createRecord("Contacts_Groups", m);										
+	info m;										
+}											
+											
+											
+											
+users table											
+owner_id = data_deal.get("Owner").get("id");											
+m = Map();											
+resp = zoho.crm.invokeConnector("crm.getusers",m);											
+respMap = resp.get("response").toMap();											
+users = respMap.get("users");											
+userList = users.toJSONList();											
+//get user's email											
+for each user in userList											
+{											
+eachUser = user.toMap();											
+if ( owner_id == eachUser.get("id") )											
+{											
+user_email = eachUser.get("email");											
+}											
+}											
+info user_email;											
+											
+											
+get sign action ID											
+resp = zoho.sign.getTemplateById(96466000000010041);										//DealID = 4175898000001549006;	
+										Deal = zoho.crm.getRecordById("Deals",DealID);	
+zoho sign crm										actionMap = Map();	
+actionMap = Map();										fieldTextData = Map();	
+										if(!Deal.get("Contact_Name").isNull())	
+fieldTextData = Map();										{	
+											fieldTextData.put("Nombre_Cliente",Deal.get("Contact_Name").get("name"));
+fieldTextData.put("TextField_1", "NDA + BP T3k");										}	
+										if(!Deal.get("RFC_o_CURP").isNull())	
+actionMap.put("field_data",{"field_text_data":fieldTextData});										{	
+											fieldTextData.put("CURP",Deal.get("RFC_o_CURP"));
+eachActionMap1 = Map();										}	
+										if(!Deal.get("RFC").isNull())	
+eachActionMap1.put("recipient_name","Lior");										{	
+											fieldTextData.put("RFC",Deal.get("RFC"));
+eachActionMap1.put("recipient_email","liorizik@gmail.com");										}	
+										Address = "";	
+eachActionMap1.put("action_type","SIGN");										if(!Deal.get("Direcci_n_Calle").isNull())	
+										{	
+eachActionMap1.put("action_id","32076000000002014");											Address = Address + ", " + Deal.get("Direcci_n_Calle");
+										}	
+eachActionMap1.put("role","Needs to sign");										else if(!Deal.get("Calle").isNull())	
+										{	
+eachActionMap1.put("verify_recipient","false");											Address = Address + ", " + Deal.get("Calle");
+										}	
+fieldList = List();										if(!Deal.get("Direcci_n_Calle_2").isNull())	
+										{	
+fieldList.add(eachActionMap1);											Address = Address + ", " + Deal.get("Direcci_n_Calle_2");
+										}	
+actionMap.put("actions",fieldList);										else if(!Deal.get("Calle_2").isNull())	
+										{	
+submitMap = Map();											Address = Address + ", " + Deal.get("Calle_2");
+										}	
+submitMap.put("templates",actionMap);										if(!Deal.get("Direcci_n_Ciudad").isNull())	
+										{	
+parameters = Map();											Address = Address + ", " + Deal.get("Direcci_n_Ciudad");
+										}	
+parameters.put("is_quicksend","true");										else if(!Deal.get("Ciudad").isNull())	
+										{	
+parameters.put("data",submitMap);											Address = Address + ", " + Deal.get("Ciudad");
+										}	
+response = zoho.sign.createUsingTemplate(96466000000010041, parameters);										if(!Deal.get("Direcci_n_Estado").isNull())	
+										{	
+info response;											Address = Address + ", " + Deal.get("Direcci_n_Estado");
+										}	
+										else if(!Deal.get("Estado").isNull())	
+										{	
+											Address = Address + ", " + Deal.get("Estado");
+										}	
+Multiple search										if(!Deal.get("Direcci_n_C_digo_Postal").isNull())	
+resp = zoho.crm.searchRecords("Leads", "((Last_Name:equals:Hawkins) or (Last_Name:starts_with:Pat))");										{	
+IF lookup	Search_Clients_Products = zoho.crm.searchRecords("Clients_Products","((WHR_Service:equals:" + ProductName + ") and (Client.id:equals:" + ClientID + "))");										Address = Address + ", " + Deal.get("Direcci_n_C_digo_Postal");
+										}	
+										else if(!Deal.get("C_digo_Postal").isNull())	
+Convert with contact, account, quote deal										{	
+Lead = zoho.crm.getRecordById("Leads",LeadID);											Address = Address + ", " + Deal.get("C_digo_Postal");
+Lead_Source = Lead.get("Lead_Source");										}	
+RelatedProducts = zoho.crm.getRelatedRecords("Products","Leads",LeadID);										fieldTextData.put("Domicilio_fiscal",Address);	
+TotalPrice = 0;										Address = "";	
+productsList = List:Map();										if(!Deal.get("Calle").isNull())	
+for each  Product in RelatedProducts										{	
+{											Address = Address + ", " + Deal.get("Calle");
+	TotalPrice = TotalPrice + Product.get("Unit_Price");									}	
+	productDetails = Map();									else if(!Deal.get("Direcci_n_Calle").isNull())	
+	productDetails.put("product",{"id":Product.get("id")});									{	
+	productDetails.put("quantity",1);										Address = Address + ", " + Deal.get("Direcci_n_Calle");
+	productsList.add(productDetails);									}	
+}										if(!Deal.get("Calle_2").isNull())	
+info productsList;										{	
+NextMonth = zoho.currentdate.addday(30);											Address = Address + ", " + Deal.get("Calle_2");
+CName = Lead.get("First_Name") + " " + Lead.get("Last_Name");										}	
+Corp = Lead.get("Company");										else if(!Deal.get("Direcci_n_Calle_2").isNull())	
+DealName = Corp + " - " + zoho.currentdate;										{	
+deal_values = Map();											Address = Address + ", " + Deal.get("Direcci_n_Calle_2");
+deal_values.put("Deal_Name",DealName);										}	
+deal_values.put("Amount",TotalPrice);										if(!Deal.get("Ciudad").isNull())	
+deal_values.put("Closing_Date",NextMonth);										{	
+deal_values.put("Stage","Demo/Present");											Address = Address + ", " + Deal.get("Ciudad");
+response = zoho.crm.convertLead(LeadID,{"Deals":deal_values});										}	
+info response.get("Accounts");										else if(!Deal.get("Direcci_n_Ciudad").isNull())	
+for each  Product in RelatedProducts										{	
+{											Address = Address + ", " + Deal.get("Direcci_n_Ciudad");
+	TotalPrice = TotalPrice + Product.get("Unit_Price");									}	
+}										if(!Deal.get("Estado").isNull())	
+quoteDetails = Map();										{	
+quoteDetails.put("Subject",DealName);											Address = Address + ", " + Deal.get("Estado");
+quoteDetails.put("Account_Name",{"id":response.get("Accounts")});										}	
+quoteDetails.put("Contact_Name",{"id":response.get("Contacts")});										else if(!Deal.get("Direcci_n_Estado").isNull())	
+quoteDetails.put("Deal_Name",{"id":response.get("Deals")});										{	
+quoteDetails.put("Quote_Stage","Drafting Quote");											Address = Address + ", " + Deal.get("Direcci_n_Estado");
+quoteDetails.put("Valid_Until",NextMonth);										}	
+quoteDetails.put("Lead_Source",Lead_Source);										if(!Deal.get("C_digo_Postal").isNull())	
+quoteDetails.put("Product_Details",productsList);										{	
+response = zoho.crm.createRecord("Quotes",quoteDetails);											Address = Address + ", " + Deal.get("C_digo_Postal");
+info response;										}	
+/*										else if(!Deal.get("Direcci_n_C_digo_Postal").isNull())	
+{"Contacts":"2034067000000818413","Deals":"2034067000000818420","Accounts":"2034067000000818409"}										{	
+*/											Address = Address + ", " + Deal.get("Direcci_n_C_digo_Postal");
+										}	
+										fieldTextData.put("Direccion",Address);	
+										if(!Deal.get("Cu_ntos_meses_quieres_rentar_tu_bici").isNull())	
+resp = invokeurl										{	
+[											fieldTextData.put("Tiempo",Deal.get("Cu_ntos_meses_quieres_rentar_tu_bici"));
+url: "https://www.zohoapis.com/crm/v2/Contacts/roles"										}	
+type: GET										if(!Deal.get("Closing_Date").isNull())	
+connection: "crm"										{	
+];											fieldTextData.put("INICIO_DIA_MES_AnO",Deal.get("Closing_Date"));
+list = resp.get("contact_roles").toJSONList();										}	
+for each rec in list										if(!Deal.get("Bike_Return_Date").isNull())	
+{										{	
+info rec.get("name");											fieldTextData.put("Terminacion_DIA_MES_AnO",Deal.get("Bike_Return_Date"));
+info rec.get("id");										}	
+}											
+										//if(!Deal.get("Contact_Name").isNull())	
+										//{	
+Related Items	add										fieldTextData.put("nombre_contratante","ghgfhfhfg fghgfhf");
+mp=map();										//}	
+resp = zoho.crm.updateRelatedRecord("Products",proid,"Deals",potid.toLong(),mp);										Monthly_Amount = 0;	
+info resp;										if(!Deal.get("MESES_costo_por_mes2").isNull())	
+										{	
+											Monthly_Amount = Deal.get("MESES_costo_por_mes2") / 1.16;
+											Monthly_Amount_vat = Deal.get("MESES_costo_por_mes2");
+										}	
+										if(!Deal.get("MESES_costo_por_mes").isNull())	
+										{	
+											Monthly_Amount = Deal.get("MESES_costo_por_mes") / 1.16;
+											Monthly_Amount_vat = Deal.get("MESES_costo_por_mes");
+										}	
+	delete									if(!Deal.get("MESES_costo_por_mes1").isNull())	
+response = invokeurl										{	
+[											Monthly_Amount = Deal.get("MESES_costo_por_mes1") / 1.16;
+url: "https://www.zohoapis.com/crm/v2/Deals/"+FileID.toLong()+"/Products/"+Product.get("id")											Monthly_Amount_vat = Deal.get("MESES_costo_por_mes1");
+type: DELETE										}	
+connection: xxxxxxxxx										fieldTextData.put("valor_renta_sin_iva",Monthly_Amount);	
+];											
+info response;											fieldTextData.put("Texto-9","30% de valor contrato");
+											fieldTextData.put("Texto_18","STUDIO CYCLE III");
+	update										fieldTextData.put("Texto_17","CAM CAPITAL SAPI");
+response = invokeurl											
+[											
+url: "https://www.zohoapis.com/crm/v2/Deals/"+FileID.toLong()+"/Products/"+Product.get("id")											
+type: DELETE										actionMap.put("field_data",{"field_text_data":fieldTextData});	
+connection: xxxxxxxxx										eachActionMap1 = Map();	
+];										Contact = zoho.crm.get("Contacts",Deal.get("Contact_Name").get("id"));	
+info response;										eachActionMap1.put("recipient_name",Deal.get("Contact_Name").get("name"));	
+										eachActionMap1.put("recipient_email",Contact.get("Email"));	
+										eachActionMap1.put("action_type","SIGN");	
+										eachActionMap1.put("action_id","148943000000019018");	
+Open report in a new window										eachActionMap1.put("role","Needs to sign");	
+Lead = zoho.crm.getRecordById("Leads",LeadID);										eachActionMap1.put("verify_recipient","false");	
+URL = "https://www.optimizelocation.com/partner/pbrmanagementinc/listing-report.html?";										fieldList = List();	
+URL2 = "";										fieldList.add(eachActionMap1);	
+if(!Lead.get("Company").isNull())										actionMap.put("actions",fieldList);	
+{										submitMap = Map();	
+	URL2 = URL2 + "name=" + Lead.get("Company") + "&";									submitMap.put("templates",actionMap);	
+}										parameters = Map();	
+if(!Lead.get("Street").isNull())										parameters.put("is_quicksend","true");	
+{										parameters.put("data",submitMap);	
+	URL2 = URL2 + "address=" + Lead.get("Street") + "&";									response = zoho.sign.createUsingTemplate(148943000000019001,parameters);	
+}										info response;	
+if(!Lead.get("Phone").isNull())										/*	
+{											
+	URL2 = URL2 + "phone=" + Lead.get("Phone") + "&";									{"code":0,"templates":{"owner_email":"fer@worqout.mx","created_time":1590679441827,"email_reminders":true,"document_ids":[{"image_string":"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Tg89uPriom1qRWYf2RqTAHgrEvPGe7D/ADinvpc7OWXUbhRngA5wAcgdfw96VNOuElLnUJjlSMduQcHknpn9BnJ5oAdJqbJamddOvXIfZ5Sxjf0znBIGO2c0iam7Soh069XewUEoMDPc88Cl/s+bylT7fPn+I+vX8uo/L15po02Yzl21C4KE5KAkfrnj8Me2KAJvtco1AWzWsgjIBEwyV/i68cfd/UVUGsXGcNplyCUZgArHp0H3cc5A6+vYZp40ucbD/aM5ZRjP976+/wBMDjoecvfTrh7lpft8oB6JjgDJ44Pv9fegBbe+uppEV7Botwyd7HgevTH4Zznt3psurPFctF/Zt86g48xIwV649enehdOuBcLKdQmIX+HnB5Hv7fqe3FT29pLDJve6ll68N0/z/j9MAEUOpPLNsOn3iKWCh2QY+p54FOj1BpJJ0NhdoIgxDMi4kwcfLzzntnFXaKAKH9oy/ZYZ/wCz7rLlt0W0b0AzjIzjk4GAe+egJpsWrNJIqHTb+PL7NzxDH+9welaNFAFV7qZbkRfZWK4yZc/KBnp65xuP4AZ5FBvGF5JB9kuCqJv83aNrew5yTVqigCh/aZM0Ua2N5mRgCxiwqfU/SmSas6SSoNMv2EZPziMYbBxxzk+o4rSooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKAP/9k=","document_name":"Contrato WorqoutCycle","pages":[{"image_string":"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Tg89uPriom1qRWYf2RqTAHgrEvPGe7D/ADinvpc7OWXUbhRngA5wAcgdfw96VNOuElLnUJjlSMduQcHknpn9BnJ5oAdJqbJamddOvXIfZ5Sxjf0znBIGO2c0iam7Soh069XewUEoMDPc88Cl/s+bylT7fPn+I+vX8uo/L15po02Yzl21C4KE5KAkfrnj8Me2KAJvtco1AWzWsgjIBEwyV/i68cfd/UVUGsXGcNplyCUZgArHp0H3cc5A6+vYZp40ucbD/aM5ZRjP976+/wBMDjoecvfTrh7lpft8oB6JjgDJ44Pv9fegBbe+uppEV7Botwyd7HgevTH4Zznt3psurPFctF/Zt86g48xIwV649enehdOuBcLKdQmIX+HnB5Hv7fqe3FT29pLDJve6ll68N0/z/j9MAEUOpPLNsOn3iKWCh2QY+p54FOj1BpJJ0NhdoIgxDMi4kwcfLzzntnFXaKAKH9oy/ZYZ/wCz7rLlt0W0b0AzjIzjk4GAe+egJpsWrNJIqHTb+PL7NzxDH+9welaNFAFV7qZbkRfZWK4yZc/KBnp65xuP4AZ5FBvGF5JB9kuCqJv83aNrew5yTVqigCh/aZM0Ua2N5mRgCxiwqfU/SmSas6SSoNMv2EZPziMYbBxxzk+o4rSooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKACiiigAooooAKKKKAP/9k=","page":0,"is_thumbnail":true}],"document_size":564359,"document_order":"0","total_pages":7,"document_id":"148943000000019002"}],"notes":"","reminder_period":1,"owner_id":"148943000000008003","document_fields":[{"document_id":"148943000000019002","fields":[{"field_id":"148943000000019027","field_type_id":"148943000000000147","text_property":{"is_italic":false,"is_underline":false,"font_color":"000000","font_size":11,"is_read_only":false,"is_bold":false,"font":"Roboto"},"field_category":"textfield","field_label":"Nombre Cliente","is_mandatory":true,"default_value":"","page_no":0,"document_id":"148943000000019002","field_name":"","y_value":13.812677,"width":16.034271,"field_type_name":"Textfield","description_tooltip":"","x_value":68.29865,"height":1.513718},{"field_id":"148943000000022001","field_type_id":"148943000000000147","text_property":{"is_italic":false,"is_underline":false,"font_color":"000000","font_size":9,"is_read_only":false,"is_bold":false,"font":"Roboto"},"field_category":"textfield","field_label":"CURP","is_mandatory":true,"default_value":"","page_no":0,"document_id":"148943000000019002","field_name":"","y_value":78.89751,"width":13.463892,"field_type_name":"Textfield","description_tooltip":"","x_value":61.627907,"height":1.419111},{"field_id":"148943000000021008","field_type_id":"148943000000000147","text_property":{"is_italic":false,"is_underline":false,"font_color":"000000","font_size":10,"is_read_only":false,"is_bold":false,"font":"Roboto"},"field_category":"textfield","field_label":"RFC","is_mandatory":true,"default_value":"","page_no":0,"document_id":"148943000000019002","field_name":"","y_value":80.740074,"width":12.362301,"field_type_name":"Textfield","description_tooltip":"","x_value":45.716034,"height":1.513718},{"field_id":"148943000000021013","field_type_id":"148943000000000147","text_property":{"is_italic":false,"is_underline":false,"font_color":"000000","font_size":10,"is_read_only":false,"is_bold":false,"font":"Roboto"},"field_category":"textfield","field_label":"Domicilio fiscal","is_mandatory":true,"default_value":"","page_no":0,"document_id":"148943000000019002","field_name":"","y_value":82.38831,"width":52.141983,"field_type_name":"Textfield","description_tooltip":"","x_value":33.84333,"height":3.122044},{"field_id":"148943000000021009","field_type_id":"148943000000000147","text_property":{"is_italic":false,"is_underline":false,"font_color":"000000","font_size":10,"is_read_only":false,"is_bold":false,"font":"Roboto"},"field_category":"textfield","field_label":"Dirección","is_mandatory":true,"default_value":"","page_no":0,"document_id":"148943000000019002","field_name":"","y_value":90.38855,"width":65.97307,"field_type_name":"Textfield","description_tooltip":"","x_value":20.746634,"height":4.541154},{"field_id":"148943000000021010","field_type_id":"148943000000000147","text_property":{"is_italic":false,"is_underline":false,"font_color":"000000","font_size":10,"is_read_only":false,"is_bold":false,"font":"Roboto"},"field_category":"textfield","field_label":"Tiempo","is_mandatory":true,"default_value":"","page_no":1,"document_id":"148943000000019002","field_name":"","y_value":50.18189,"width":4.283966,"field_type_name":"Textfield","description_tooltip":"","x_value":56.36475,"height":1.79754},{"field_id":"148943000000021011","field_type_id":"148943000000000147","text_property":{"is_italic":false,"is_underline":false,"font_color":"000000","font_size":10,"is_read_only":false,"is_bold":false,"font":"Roboto"},"field_category":"textfield","field_label":"INICIO DIA/MES/AÑO","is_mandatory":true,"default_value":"","page_no":1,"document_id":"148943000000019002","field_name":"","y_value":50.412495,"width":9.302326,"field_type_name":"Textfield","description_tooltip":"","x_value":77.172585,"height":1.513718},{"field_id":"148943000000021012","field_type_id":"148943000000000147","text_property":{"is_italic":false,"is_underline":false,"font_color":"000000","font_size":10,"is_read_only":false,"is_bold":false,"font":"Roboto"},"field_category":"textfield","field_label":"Terminación DIA/MES/AÑO","is_mandatory":true,"default_value":"","page_no":1,"document_id":"148943000000019002","field_name":"","y_value":52.060734,"width":12.4847,"field_type_name":"Textfield","description_tooltip":"","x_value":71.17503,"height":1.513718},{"field_id":"148943000000021014","field_type_id":"148943000000000147","text_property":{"is_italic":false,"is_underline":false,"font_color":"000000","font_size":10,"is_read_only":false,"is_bold":false,"font":"Roboto"},"field_category":"textfield","field_label":"Texto - 9","is_mandatory":true,"default_value":"30% de valor contrato","page_no":1,"document_id":"148943000000019002","field_name":"","y_value":60.871044,"width":19.461445,"field_type_name":"Textfield","description_tooltip":"","x_value":23.192701,"height":3.122044},{"field_id":"148943000000021015","field_type_id":"148943000000000147","text_property":{"is_italic":false,"is_underline":false,"font_color":"000000","font_size":10,"is_read_only":false,"is_bold":false,"font":"Roboto"},"field_category":"textfield","field_label":"Nombre contratante","is_mandatory":true,"default_value":"","page_no":3,"document_id":"148943000000019002","field_name":"","y_value":64.89925,"width":27.050184,"field_type_name":"Textfield","description_tooltip":"","x_value":18.298655,"height":1.513718},{"field_id":"148943000000021021","field_type_id":"148943000000000147","text_property":{"is_italic":false,"is_underline":false,"font_color":"000000","font_size":11,"is_read_only":false,"is_bold":false,"font":"Roboto"},"field_category":"textfield","field_label":"Texto - 18","is_mandatory":true,"default_value":"STUDIO CYCLE III","page_no":4,"document_id":"148943000000019002","field_name":"","y_value":34.05866,"width":16.034271,"field_type_name":"Textfield","description_tooltip":"","x_value":39.473682,"height":1.513718},{"field_id":"148943000000021016","field_type_id":"148943000000000147","text_property":{"is_italic":false,"is_underline":false,"font_color":"000000","font_size":10,"is_read_only":false,"is_bold":false,"font":"Roboto"},"field_category":"textfield","field_label":"nombre contratante","is_mandatory":true,"default_value":"","page_no":4,"document_id":"148943000000019002","field_name":"","y_value":40.58515,"width":15.177479,"field_type_name":"Textfield","description_tooltip":"","x_value":57.46634,"height":1.513718},{"field_id":"148943000000021017","field_type_id":"148943000000000147","text_property":{"is_italic":false,"is_underline":false,"font_color":"000000","font_size":10,"is_read_only":false,"is_bold":false,"font":"Roboto"},"field_category":"textfield","field_label":"valor renta sin iva","is_mandatory":true,"default_value":"","page_no":4,"document_id":"148943000000019002","field_name":"","y_value":48.05766,"width":8.69033,"field_type_name":"Textfield","description_tooltip":"","x_value":78.64137,"height":3.122044},{"field_id":"148943000000021018","field_type_id":"148943000000000147","text_property":{"is_italic":false,"is_underline":false,"font_color":"000000","font_size":10,"is_read_only":false,"is_bold":false,"font":"Roboto"},"field_category":"textfield","field_label":"nombre completo","is_mandatory":true,"default_value":"","page_no":4,"document_id":"148943000000019002","field_name":"","y_value":89.30795,"width":28.64137,"field_type_name":"Textfield","description_tooltip":"","x_value":16.707466,"height":1.513718},{"field_id":"148943000000021020","field_type_id":"148943000000000147","text_property":{"is_italic":false,"is_underline":false,"font_color":"000000","font_size":10,"is_read_only":false,"is_bold":false,"font":"Roboto"},"field_category":"textfield","field_label":"Texto - 17","is_mandatory":true,"default_value":"CAM CAPITAL SAPI","page_no":4,"document_id":"148943000000019002","field_name":"","y_value":89.34934,"width":20.440636,"field_type_name":"Textfield","description_tooltip":"","x_value":61.26071,"height":1.986755},{"field_id":"148943000000021019","field_type_id":"148943000000000147","text_property":{"is_italic":false,"is_underline":false,"font_color":"000000","font_size":10,"is_read_only":false,"is_bold":false,"font":"Roboto"},"field_category":"textfield","field_label":"Nombre completo","is_mandatory":true,"default_value":"","page_no":5,"document_id":"148943000000019002","field_name":"","y_value":89.30795,"width":27.294983,"field_type_name":"Textfield","description_tooltip":"","x_value":35.556915,"height":1.79754}]}],"description":"","template_name":"Contrato WorqoutCycle","modified_time":1591194575910,"is_deleted":false,"expiration_days":15,"is_sequential":true,"template_id":"148943000000019001","validity":-1,"request_type_name":"Others","owner_first_name":"Fernando","request_type_id":"148943000000000135","owner_last_name":"Camacho","actions":[{"ishost":false,"verify_recipient":false,"role":"Client","action_type":"SIGN","private_notes":"","recipient_email":"","language":"es","recipient_phonenumber":"","action_id":"148943000000019018","signing_order":1,"fields":[{"field_id":"148943000000021003","field_type_id":"148943000000000141","field_category":"image","field_label":"Firma","is_mandatory":true,"page_no":3,"document_id":"148943000000019002","field_name":"Firma","y_value":60.832546,"action_id":"148943000000019018","width":22.031824,"field_type_name":"Signature","description_tooltip":"","x_value":19.889841,"height":2.459792},{"field_id":"148943000000021004","field_type_id":"148943000000000141","field_category":"image","field_label":"Firma","is_mandatory":true,"page_no":4,"document_id":"148943000000019002","field_name":"Firma","y_value":85.99811,"action_id":"148943000000019018","width":22.031824,"field_type_name":"Signature","description_tooltip":"","x_value":20.01224,"height":2.459792},{"field_id":"148943000000021005","field_type_id":"148943000000000141","field_category":"image","field_label":"Firma","is_mandatory":true,"page_no":5,"document_id":"148943000000019002","field_name":"Firma","y_value":86.37653,"action_id":"148943000000019018","width":22.031824,"field_type_name":"Signature","description_tooltip":"","x_value":39.351284,"height":2.459792}],"recipient_name":"Contrato WORQOUT/KINECTA","recipient_countrycode":""},{"ishost":false,"verify_recipient":false,"action_id":"148943000000019020","action_type":"SIGN","private_notes":"","recipient_email":"fer@worqout.mx","signing_order":2,"language":"es","fields":[{"field_id":"148943000000021006","field_type_id":"148943000000000141","field_category":"image","field_label":"Firma","is_mandatory":true,"page_no":3,"document_id":"148943000000019002","field_name":"Firma","y_value":60.832546,"action_id":"148943000000019020","width":22.031824,"field_type_name":"Signature","description_tooltip":"","x_value":57.34394,"height":2.459792},{"field_id":"148943000000021007","field_type_id":"148943000000000141","field_category":"image","field_label":"Firma","is_mandatory":true,"page_no":4,"document_id":"148943000000019002","field_name":"Firma","y_value":85.99811,"action_id":"148943000000019020","width":22.031824,"field_type_name":"Signature","description_tooltip":"","x_value":59.05753,"height":2.459792}],"recipient_name":"Fernando Camacho","recipient_phonenumber":"","recipient_countrycode":"+91"}]},"message":"Template has been retrieved","status":"success"}	
+}											
+if(!Lead.get("Zip_Code").isNull())										*/	
+{											
+	URL2 = URL2 + "zip=" + Lead.get("Zip_Code") + "&";										
+}											
+if(!Lead.get("City").isNull())											
+{											
+	URL2 = URL2 + "city=" + Lead.get("City") + "&";										
+}											
+if(!Lead.get("State").isNull())											
+{											
+	URL2 = URL2 + "state=" + Lead.get("State");										
+}											
+URL2 = replaceAll(URL2,"#","%23");											
+NewURL = URL + URL2;											
+m = Map();											
+m.put("Yext_Domain_Crawl_URL",NewURL);											
+res = zoho.crm.updateRecord("Leads",LeadID,m);											
+info res;											
+info NewURL;											
+//name=SLS%20Financial&address=8341%20NW%20Mace%20Rd%20%23%20200&phone=%2B1%20816-587-3400&zip=64152&city=Kansas%20City&state=MO											
+openUrl(NewURL,"new window");											
+return "";											
+											
+											
+Create invoice with products											
+Deal = zoho.crm.getRecordById("Deals",DealID);											
+NextMonth = zoho.currentdate.addday(30);											
+RelatedProducts = zoho.crm.getRelatedRecords("Products","Deals",DealID);											
+TotalPrice = 0;											
+productsList = List:Map();											
+for each  Product in RelatedProducts											
+{											
+	TotalPrice = TotalPrice + Product.get("Unit_Price");										
+	productDetails = Map();										
+	productDetails.put("product",{"id":Product.get("id")});										
+	productDetails.put("quantity",1);										
+	productsList.add(productDetails);										
+}											
+//info productsList;											
+for each  Product in RelatedProducts											
+{											
+	TotalPrice = TotalPrice + Product.get("Unit_Price");										
+}											
+quoteDetails = Map();											
+if(!Deal.get("Billing_Street").isNull())											
+{											
+	quoteDetails.put("Billing_Street",Deal.get("Billing_Street"));										
+}											
+if(!Deal.get("Billing_Street_2").isNull())											
+{											
+	quoteDetails.put("Billing_Street_2",Deal.get("Billing_Street_2"));										
+}											
+if(!Deal.get("Billing_City").isNull())											
+{											
+	quoteDetails.put("Billing_City",Deal.get("Billing_City"));										
+}											
+if(!Deal.get("Billing_Code").isNull())											
+{											
+	quoteDetails.put("Billing_Code",Deal.get("Billing_Code").toText());										
+}											
+if(!Deal.get("Billing_State").isNull())											
+{											
+	quoteDetails.put("Billing_State1",Deal.get("Billing_State"));										
+}											
+if(!Deal.get("Mobile_Phone_Number").isNull())											
+{											
+	quoteDetails.put("Mobile_Phone",Deal.get("Mobile_Phone_Number"));										
+}											
+if(!Deal.get("Phone").isNull())											
+{											
+	quoteDetails.put("Business_Phone",Deal.get("Phone"));										
+}											
+if(!Deal.get("Contact_Email").isNull())											
+{											
+	quoteDetails.put("Contact_Email_Address",Deal.get("Contact_Email"));										
+}											
+if(!Deal.get("Client_Website").isNull())											
+{											
+	quoteDetails.put("Client_Website",Deal.get("Client_Website"));										
+}											
+quoteDetails.put("Subject",Deal.get("Deal_Name"));											
+quoteDetails.put("Account_Name",Deal.get("Account_Name"));											
+quoteDetails.put("Contact_Name",Deal.get("Contact_Name"));											
+quoteDetails.put("Deal_Name",DealID);											
+quoteDetails.put("Quote_Stage","Drafting Quote");											
+quoteDetails.put("Valid_Until",NextMonth);											
+quoteDetails.put("Lead_Source",Deal.get("Lead_Source"));											
+quoteDetails.put("Product_Details",productsList);											
+response = zoho.crm.createRecord("Quotes",quoteDetails);											
+info response;											
+/*											
+{"Contacts":"2034067000000818413","Deals":"2034067000000818420","Accounts":"2034067000000818409"}											
+*/											
+openUrl("https://crm.zoho.com/crm/org674466610/tab/Potentials/" + DealID,"same window");											
+return "";											
+											
+											
+											
+											
+invoice with custom pricing for koby											
+//DealID = 2979020000001063165;											
+invoice = zoho.crm.getRecordById("Invoices", 2979020000001067001);											
+info invoice;											
+Deal = zoho.crm.getRecordById("Deals",DealID);											
+NextMonth = Deal.get("Closing_Date").addday(30);											
+//RelatedProducts = zoho.crm.getRelatedRecords("Products","Deals",DealID);											
+TotalPrice = 0;											
+productsList = List:Map();											
+RelatedProducts = zoho.crm.searchRecords("Products", "(Product_Name:equals:" + Deal.get("Product").get("name") + ")");											
+											
+for each Product in RelatedProducts											
+{											
+TotalPrice = TotalPrice + Deal.get("Payout_Amount");											
+productDetails = Map();											
+productDetails.put("product",{"id":Product.get("id")});											
+productDetails.put("list_price",Deal.get("Payout_Amount"));											
+productDetails.put("quantity",1);											
+productsList.add(productDetails);											
+}											
+//info productsList;											
+for each Product in RelatedProducts											
+{											
+TotalPrice = TotalPrice + Deal.get("Payout_Amount");											
+}											
+quoteDetails = Map();											
+if(!Deal.get("Billing_Street").isNull())											
+{											
+quoteDetails.put("Billing_Street",Deal.get("Billing_Street"));											
+}											
+if(!Deal.get("Billing_Street_2").isNull())											
+{											
+quoteDetails.put("Billing_Street_2",Deal.get("Billing_Street_2"));											
+}											
+if(!Deal.get("Billing_City").isNull())											
+{											
+quoteDetails.put("Billing_City",Deal.get("Billing_City"));											
+}											
+if(!Deal.get("Billing_Code").isNull())											
+{											
+quoteDetails.put("Billing_Code",Deal.get("Billing_Code").toText());											
+}											
+if(!Deal.get("Billing_State").isNull())											
+{											
+quoteDetails.put("Billing_State1",Deal.get("Billing_State"));											
+}											
+if(!Deal.get("Mobile_Phone_Number").isNull())											
+{											
+quoteDetails.put("Mobile_Phone",Deal.get("Mobile_Phone_Number"));											
+}											
+if(!Deal.get("Phone").isNull())											
+{											
+quoteDetails.put("Business_Phone",Deal.get("Phone"));											
+}											
+if(!Deal.get("Contact_Email").isNull())											
+{											
+quoteDetails.put("Contact_Email_Address",Deal.get("Contact_Email"));											
+}											
+if(!Deal.get("Client_Website").isNull())											
+{											
+quoteDetails.put("Client_Website",Deal.get("Client_Website"));											
+}											
+//On time payment											
+quoteDetails.put("Subject","Purchase Payout Amount - " + Deal.get("Deal_Name"));											
+quoteDetails.put("Account_Name",Deal.get("Account_Name"));											
+quoteDetails.put("Contact_Name",Deal.get("Contact_Name"));											
+quoteDetails.put("Deal_Name",DealID);											
+quoteDetails.put("Status","Created");											
+quoteDetails.put("Invoice_Date",zoho.currentdate);											
+quoteDetails.put("Due_Date",NextMonth);											
+quoteDetails.put("Product_Details",productsList);											
+response = zoho.crm.createRecord("Invoices",quoteDetails);											
+											
+											
+//Trial											
+TotalPrice = 0;											
+productsList = List:Map();											
+RelatedProducts = zoho.crm.searchRecords("Products", "(Product_Name:equals:" + Deal.get("Product").get("name") + ")");											
+info RelatedProducts;											
+for each Product in RelatedProducts											
+{											
+TotalPrice = TotalPrice + Deal.get("Trail_Fee1");											
+productDetails = Map();											
+productDetails.put("list_price",Deal.get("Trail_Fee1"));											
+productDetails.put("product",{"id":Product.get("id")});											
+productDetails.put("quantity",1);											
+productsList.add(productDetails);											
+}											
+//info productsList;											
+for each Product in RelatedProducts											
+{											
+TotalPrice = TotalPrice + Deal.get("Trail_Fee1");											
+}											
+Years = List:Int({1,2,3,4,5,6,7,8,9,10});											
+for each val in Years											
+{											
+if(val <= Deal.get("Number_of_Years"))											
+{											
+NextMonth = NextMonth.addYear(1);											
+quoteDetails.put("Subject","Trail Fee Year " + val + " - " + Deal.get("Deal_Name"));											
+quoteDetails.put("Account_Name",Deal.get("Account_Name"));											
+quoteDetails.put("Contact_Name",Deal.get("Contact_Name"));											
+quoteDetails.put("Deal_Name",DealID);											
+quoteDetails.put("Status","Created");											
+quoteDetails.put("Invoice_Date",zoho.currentdate);											
+quoteDetails.put("Due_Date",NextMonth);											
+quoteDetails.put("Product_Details",productsList);											
+response = zoho.crm.createRecord("Invoices",quoteDetails);											
+}											
+}											
+/*											
+if(Deal.get("Number_of_Years") > 0)											
+{											
+for each index index_item in Deal.get("Number_of_Years")											
+{											
+											
+}											
+											
+}*/											
+info response;											
+											
+											
+											
+To achieve your requirement please create a custom function in Zoho Bookings for the action "When an Appointment is Booked" and use the below script. Please change the field name as per your needs.											
+customerEmail= bookingInfo.get("customer_email");											
+response= zoho.crm.searchRecords("Leads", "(Email:equals:"+customerEmail+")");											
+if(!response.isEmpty()){											
+crmLeadID= response.getJSON("id");											
+bookingID=bookingInfo.get("booking_id"); //here we have used booking id but you can change it to any field from Zoho Bookings using the field name											
+params=map();											
+params.put("FieldName", bookingID); //Please change FieldName with the API field name in Zoho CRM											
+updateResponse= zoho.crm.updateRecord("Leads", crmLeadID.tolong(), params);											
+info updateResponse;											
+}											
+											
+											
+											
+Code :	https://www.zoho.com/deluge/help/script/cliq/posting-to-zoho-cliq.html					https://www.zoho.com/cliq/help/platform/post-to-user.html					
+email = zoho.crm.getRecordById("users", ownerid).get("users").get(0).get("email");											
+info email;											
+post = zoho.cliq.postToUser(email, "New record assigned");											
+info post;											
+											
+											
+sms											
+//leadId = 4310956000000322745;											
+accountDetails = zoho.crm.getRecordById("Leads",leadId.toLong());											
+tophone = accountDetails.get("Mobile");											
+TheMesage = "Hi " + accountDetails.get("First_Name") + ".  I see you’re looking for a home.  If you give me 3 minutes, I think I can beat any mortgage rate quote you’ve received.  What is a good time for us to talk about that?";											
+base = zoho.encryption.base64Encode("ACb61cbb590e9aac14a70d52b94e1dba95:a4e14a304e1b42898e28d25b0118479d");											
+base = base.remove("\n");											
+url = "https://api.twilio.com/2010-04-01/Accounts/ACb61cbb590e9aac14a70d52b94e1dba95/Messages.json"";											
+if(!accountDetails.get("Phone").isNull())											
+{											
+	reqMap = Map();										
+	reqMap.put("Body",TheMesage);										
+	reqMap.put("To",accountDetails.get("Phone"));										
+	reqMap.put("From"," +17323133590");										
+	hMap = Map();										
+	hMap.put("Authorization","Basic " + base);										
+	post = postUrl(url,reqMap,hMap);										
+	info post;										
+}											
+if(!accountDetails.get("Mobile").isNull())											
+{											
+	reqMap = Map();										
+	reqMap.put("Body",TheMesage);										
+	reqMap.put("To",accountDetails.get("Mobile"));										
+	reqMap.put("From"," +17323133590");										
+	hMap = Map();										
+	hMap.put("Authorization","Basic " + base);										
+	post = postUrl(url,reqMap,hMap);										
+	info post;										
+}											
+m = map();											
+m.put("twilio__Lead",leadId);											
+m.put("twilio__Custom_SMS_Message",TheMesage);											
+m.put("twilio__Direction","Outbound");											
+m.put("Name",accountDetails.get("Lead_Status"));											
+res = zoho.crm.createRecord("twilio__SMS_Texts", m);											
+info res;											
+											
+											
+											
+											
+Lead = zoho.crm.getRecordById("Leads",LeadID);											
+MessageToUser = "New lead has been delivered";											
+if(!Lead.get("First_Name").isNull())											
+{											
+	MessageToUser = MessageToUser + " " + Lead.get("First_Name");										
+}											
+if(!Lead.get("Last_Name").isNull())											
+{											
+	MessageToUser = MessageToUser + " " + Lead.get("Last_Name");										
+}											
+MessageToUser = MessageToUser + " -> https://crm.zoho.com/crm/org702136673/tab/Leads/" + Lead.get("id");											
+ownerid = Lead.get("Owner").get("id");											
+email = zoho.crm.getRecordById("users",ownerid).get("users").get(0).get("email");											
+info email;											
+post = zoho.cliq.postToUser(email,MessageToUser);											
+info post;											
+											
+											
+											
+once a week attempt (roger)											
+Lead = zoho.crm.getRecordById("Leads",LeadID);											
+info Lead.get("Number_of_Attempts");											
+if(Lead.get("Number_of_Attempts").isNull())											
+{											
+	Number_of_Attempts = 0;										
+}											
+else											
+{											
+	Number_of_Attempts = Lead.get("Number_of_Attempts");										
+}											
+m = Map();											
+m.put("Number_of_Attempts",Number_of_Attempts + 1);											
+if(Number_of_Attempts <= 4)											
+{											
+	info "1";										
+	CurrentTime = zoho.currenttime.toTime("yyyy-MM-dd'T'HH:mm:ss").addBusinessHour(2).toString("yyyy-MM-dd'T'HH:mm:ss'-05:00'");										
+}											
+if(Number_of_Attempts >= 5 && Number_of_Attempts <= 8)											
+{											
+	info "2";										
+	CurrentTime = zoho.currenttime.toTime("yyyy-MM-dd'T'HH:mm:ss").addBusinessHour(4).toString("yyyy-MM-dd'T'HH:mm:ss'-05:00'");										
+}											
+if(Number_of_Attempts >= 9 && Number_of_Attempts <= 15)											
+{											
+	info "3";										
+	CurrentTime = zoho.currenttime.toTime("yyyy-MM-dd'T'HH:mm:ss").addBusinessDay(1).toString("yyyy-MM-dd'T'HH:mm:ss'-05:00'");										
+}											
+info CurrentTime;											
+m.put("Followup_Date_Time",CurrentTime);											
+res = zoho.crm.updateRecord("Leads",LeadID,m);											
+//info res;											
+											
+Close all activities on record in active											
+ClientID = 3509146000025381017;											
+Client = zoho.crm.getRecordById("Accounts", ClientID);											
+//info Client;											
+//Events											
+Events = zoho.crm.getRelatedRecords("Events","Accounts",ClientID);											
+											
+if(!Events.isNull())											
+{											
+	for each Event in Events										
+{											
+		info Event.get("id");									
+		deleteResp = zoho.crm.invokeConnector("crm.delete",{"module":"Events","id":Event.get("id")});									
+		info deleteResp;									
+}											
+}											
+//Tasks											
+Tasks = zoho.crm.getRelatedRecords("Tasks","Accounts",ClientID);											
+if(!Tasks.isNull())											
+{											
+	for each Task in Tasks										
+{											
+		info Task.get("id");									
+		deleteResp = zoho.crm.invokeConnector("crm.delete",{"module":"Tasks","id":Task.get("id")});									
+		info deleteResp;									
+}											
+}											
+//Calls											
+Calls = zoho.crm.getRelatedRecords("Calls","Accounts",ClientID);											
+if(!Calls.isNull())											
+{											
+	for each Call in Calls										
+{											
+		info Call.get("id");									
+		deleteResp = zoho.crm.invokeConnector("crm.delete",{"module":"Calls","id":Call.get("id")});									
+		info deleteResp;									
+}											
+}											
+											
+											
+											
+											
+											
+//con = zoho.books.getRecordsByID("Contacts",organizationID,customerID).get("contact");											
+//accID = con.get("zcrm_account_id");											
+											
+											
+											
+base url	baseURL = (("http://creator.zoho.com/" + zoho.adminuser) + "/") + zoho.appname;										
+											
+											
+											
+											
+make events and tasks inactive											
+ClientID = 3509146000025381017;											
+Client = zoho.crm.getRecordById("Accounts",ClientID);											
+CurrentTime = zoho.currenttime.toTime("yyyy-MM-dd'T'HH:mm:ss");											
+//info Client;											
+//Events											
+Events = zoho.crm.getRelatedRecords("Events","Accounts",ClientID);											
+if(!Events.isNull())											
+{											
+	for each  Event in Events										
+	{										
+		EventTime = Event.get("End_DateTime").toTime("yyyy-MM-dd'T'HH:mm:ss");									
+		//info Event.get("End_DateTime");									
+		if(EventTime >= CurrentTime)									
+		{									
+			ToNewDate = zoho.currenttime.toTime("yyyy-MM-dd'T'HH:mm:ss").subYear(100).toString("yyyy-MM-dd'T'HH:mm:ss'-05:00'");								
+			EndNewDate = zoho.currenttime.toTime("yyyy-MM-dd'T'HH:mm:ss").subYear(99).toString("yyyy-MM-dd'T'HH:mm:ss'-05:00'");								
+			//	info Event;							
+			m = Map();								
+			m.put("Start_DateTime",ToNewDate);								
+			m.put("End_DateTime",EndNewDate);								
+			res = zoho.crm.updateRecord("Events",Event.get("id"),m);								
+			info res;								
+		}									
+	}										
+}											
+//Tasks											
+Tasks = zoho.crm.getRelatedRecords("Tasks","Accounts",ClientID);											
+if(!Tasks.isNull())											
+{											
+	for each  Task in Tasks										
+	{										
+		if(Task.get("Status") != "Completed")									
+		{									
+			info Task.get("id");								
+			m = Map();								
+			m.put("Status","Completed");								
+			res = zoho.crm.updateRecord("Tasks",Task.get("id"),m);								
+		}									
+	}										
+}											
+//Calls											
+Calls = zoho.crm.getRelatedRecords("Calls","Accounts",ClientID);											
+if(!Calls.isNull())											
+{											
+	for each  Call in Calls										
+	{										
+		Call_Start_Time = Call.get("Call_Start_Time").toTime("yyyy-MM-dd'T'HH:mm:ss");									
+		//info Event.get("End_DateTime");									
+		if(Call_Start_Time >= CurrentTime)									
+		{									
+			ToNewDate = zoho.currenttime.toTime("yyyy-MM-dd'T'HH:mm:ss").subYear(100).toString("yyyy-MM-dd'T'HH:mm:ss'-05:00'");								
+			m = Map();								
+			m.put("Call_Start_Time",ToNewDate);								
+			res = zoho.crm.updateRecord("Calls",Call.get("id"),m);								
+			info res;								
+		}									
+	}										
+}											
+Related_Client_Trackers = zoho.crm.getRelatedRecords("Related_Client_Trackers","Accounts",ClientID);											
+if(!Related_Client_Trackers.isNull())											
+{											
+	for each  Related_Client_Tracker in Related_Client_Trackers										
+	{										
+		info "Related_Client_Tracker: " + Related_Client_Tracker.get("id");									
+		Events = zoho.crm.getRelatedRecords("Events","Client_Trackers",Related_Client_Tracker.get("id"));									
+		info Events;									
+		if(!Events.isNull())									
+		{									
+			for each  Event in Events								
+			{								
+				info Event.get("id");							
+				//	deleteResp = zoho.crm.invokeConnector("crm.delete",{"module":"Events","id":Event.get("id")});						
+				//	info deleteResp;						
+			}								
+		}									
+		Tasks = zoho.crm.getRelatedRecords("Tasks","Client_Trackers",Related_Client_Tracker.get("id"));									
+		if(!Tasks.isNull())									
+		{									
+			for each  Task in Tasks								
+			{								
+				info Task.get("id");							
+				//	deleteResp = zoho.crm.invokeConnector("crm.delete",{"module":"Tasks","id":Task.get("id")});						
+				//	info deleteResp;						
+			}								
+		}									
+		Calls = zoho.crm.getRelatedRecords("Calls","Client_Trackers",Related_Client_Tracker.get("id"));									
+		if(!Calls.isNull())									
+		{									
+			for each  Call in Calls								
+			{								
+				info Call.get("id");							
+				//	deleteResp = zoho.crm.invokeConnector("crm.delete",{"module":"Calls","id":Call.get("id")});						
+				//	info deleteResp;						
+			}								
+		}									
+	}										
+}											
+											
+get a userID based on user name											
+names= "Lior Izik";											
+users = zoho.crm.getRecords("users").get("users").toJSONList();											
+//info users;											
+for each  rec in users											
+{											
+fullname= rec.get("full_name");											
+if(fullname == names)											
+	{										
+		info rec.get("id");									
+	}										
+}											
+											
+											
+Assign account to deals											
+ErrorMessage = "1";											
+Deals = zoho.crm.getRecords("Deals",0,200,{"cvid":3020726000009790233});											
+if(!Deals.isEmpty())											
+{											
+	for each  Deal in Deals										
+	{										
+		DealID = Deal.get("id");									
+		//info "DealID - " + DealID;									
+		Profile_Id = trim(Deal.get("Profile_Id"));									
+		Accounts = zoho.crm.searchRecords("Accounts","(Zoho_Profile_Id:equals:" + Profile_Id + ")");									
+		if(!Accounts.isEmpty())									
+		{									
+			CountAccount = 0;								
+			for each  Account in Accounts								
+			{								
+				//info "Account - " + Account.get("Account_Name");							
+				CountAccount = CountAccount + 1;							
+				if(CountAccount > 1)							
+				{							
+					ErrorMessage = ErrorMessage + "Duplicated Accounts For " + Account.get("Account_Name");						
+				}							
+				m = Map();							
+				m.put("Account_Name",Account.get("id"));							
+				if(!Account.get("Main_Contact").isNull())							
+				{							
+					m.put("Contact_Name",Account.get("Main_Contact").get("id"));						
+				}							
+				New_Deal_Name = "Zoho Commisssion For " + Account.get("Account_Name") + " " + Account.get("Closing_Date");							
+				m.put("Deal_Name",Account.get("New_Deal_Name"));							
+				res = zoho.crm.updateRecord("Deals",DealID,m);							
+			}								
+		}									
+		else									
+		{									
+			ErrorMessage = ErrorMessage + "No Profile Id Found " + Profile_Id;								
+		}									
+	}										
+}											
+else											
+{											
+	ErrorMessage = "No Deals Found";										
+}											
+if(ErrorMessage == "1")											
+{											
+	ErrorMessage = "Executed Successfully";										
+}											
+//info ErrorMessage;											
+return ErrorMessage;											
+											
+											
+//insert to subform											
+ContactID = 4384667000000466120;											
+Contact = zoho.crm.getRecordById("Contacts",ContactID);											
+//info Contact;											
+sub_forms = List();											
+subform = Map();											
+if(!Contact.get("Electricity_i021").isNull())											
+{											
+	subform.put("Electricity_i021",Contact.get("Electricity_i021"));										
+}											
+if(!Contact.get("Rental_i013").isNull())											
+{											
+	subform.put("Rental_i013",Contact.get("Rental_i013"));										
+}											
+if(!Contact.get("Security_i028").isNull())											
+{											
+	subform.put("Security_i028",Contact.get("Security_i028"));										
+}											
+if(!Contact.get("Sewer_Maint_i029").isNull())											
+{											
+	subform.put("Sewer_Maint_i029",Contact.get("Sewer_Maint_i029"));										
+}											
+if(!Contact.get("Water_i030").isNull())											
+{											
+	subform.put("Water_i030",Contact.get("Water_i030"));										
+}											
+subform.put("Status","Active");											
+sub_forms.add(subform);											
+parammap = Map();											
+parammap.put("Monthly_Rentals",sub_forms);											
+update = zoho.crm.updateRecord("Contacts",ContactID,parammap);											
+info update;											
+											
+											
+											
+//DealID = 4368666000000363100;											
+ErrorMessage = "";											
+System_Settings = zoho.crm.searchRecords("System_Settings","(Name:equals:1)");											
+for each  System_Setting in System_Settings											
+{											
+}											
+if(System_Setting.isEmpty())											
+{											
+	return "Failed! The System_Setting array is empty. Please check the System Settings module";										
+}											
+Deal = zoho.crm.getRecordById("Deals",DealID);											
+if(Deal.get("Account_Name").isNull())											
+{											
+	return "Failed! The Deal doesn't have an account assigned to it.";										
+}											
+if(Deal.get("Contact_Name").isNull())											
+{											
+	return "Failed! The Deal doesn't have a contact assigned to it.";										
+}											
+acctid = Deal.get("Account_Name").get("id");											
+resp = invokeurl											
+[											
+	url :"https://books.zoho.com/api/v3/crm/account/" + acctid + "/import?organization_id=" + System_Setting.get("BooksOrgID")										
+	type :POST										
+	connection:"bookscontactcreate"										
+];											
+Products = zoho.crm.getRelatedRecords("Products","Potentials",DealID);											
+if(Products.isEmpty())											
+{											
+	ErrorMessage = "Failed! No products assigned to the deal";										
+}											
+//if(zoho.books.getRecords("Contacts",System_Setting.get("BooksOrgID"),"zcrm_account_id=" + acctid).get("contacts").get(0).get("contact_id").isNull())											
+//{											
+//	return "Failed! Looks like Zoho Books sync didn't take place yet. Give it a few minutes.";										
+//	info "on";										
+//}											
+//else											
+//{											
+//4368666000000382009											
+BooksCustomer_ID = zoho.books.getRecords("Contacts",System_Setting.get("BooksOrgID"),"zcrm_account_id=" + acctid).get("contacts").get(0).get("contact_id");											
+//}											
+listVar = List();											
+//iterating each row in the subform											
+for each  line in Products											
+{											
+	mapVar = Map();										
+	mapVar.put("name",line.get("Product_Name"));										
+	mapVar.put("rate",line.get("Unit_Price"));										
+	mapVar.put("quantity",1);										
+	listVar.add(mapVar);										
+}											
+values = Map();											
+values.put("customer_id",BooksCustomer_ID);											
+values.put("expiry_date",zoho.currentdate.addDay(System_Setting.get("Estimate_Expiry_Plus_Days")));											
+values.put("reference_number",Deal.get("Deal_Name") + " - " + DealID);											
+values.put("zcrm_potential_id",DealID);											
+values.put("zcrm_account_id",Deal.get("Account_Name").get("id"));											
+values.put("zcrm_contact_id",Deal.get("Contact_Name").get("id"));											
+values.put("line_items",listVar);											
+response = zoho.books.createRecord("Estimates",System_Setting.get("BooksOrgID"),values);											
+if(response.get("code") == "0")											
+{											
+	ErrorMessage = "Estimate created successfully";										
+}											
+info response.get("code");											
+return ErrorMessage;											
+/*											
+											
+{"code":0,"message":"success","estimate":{"estimate_id":"2168266000000083069","estimate_number":"EST-000005","zcrm_potential_id":"","zcrm_potential_name":"","date":"2020-01-27","created_date":"2020-01-27","reference_number":"","status":"draft","color_code":"","current_sub_status_id":"","current_sub_status":"draft","sub_statuses":[],"customer_id":"2168266000000090137","documents":[],"customer_name":"Rangoni Of Florence","is_transaction_created":false,"is_converted_to_open":false,"contact_category":"","contact_persons":[],"currency_id":"2168266000000000101","currency_code":"CAD","currency_symbol":"$","exchange_rate":1.0,"expiry_date":"","discount":0.0,"discount_applied_on_amount":0.0,"is_discount_before_tax":true,"discount_type":"item_level","is_viewed_by_client":false,"client_viewed_time":"","is_inclusive_tax":false,"estimate_url":"https://zohosecurepay.com/books/bestcrmforwebdelelopment/secure?CEstimateID=2-e8121354d637d6c9f6383c0c2e61b281ff2e1b5154629bf4e2a0265a6c276392b446966dab6699cd2b4180601b3616b088443895b37366ee1d51b06a02b110e18362122172f8cf69 ","line_items":[{"item_id":"2168266000000095018","line_item_id":"2168266000000083077","documents":[],"name":"Custom Wordpress Website","description":"","item_order":1,"header_id":"","header_name":"","bcy_rate":10000.0,"rate":10000.0,"quantity":1.0,"unit":"","pricebook_id":"","discount_amount":0.0,"discount":0.0,"tax_id":"","tax_name":"","tax_type":"tax","tax_percentage":0,"item_total":10000.0,"tags":[],"image_document_id":"","item_custom_fields":[]},{"item_id":"2168266000000095007","line_item_id":"2168266000000083079","documents":[],"name":"Wordpress Website From Template","description":"","item_order":2,"header_id":"","header_name":"","bcy_rate":4000.0,"rate":4000.0,"quantity":1.0,"unit":"","pricebook_id":"","discount_amount":0.0,"discount":0.0,"tax_id":"","tax_name":"","tax_type":"tax","tax_percentage":0,"item_total":4000.0,"tags":[],"image_document_id":"","item_custom_fields":[]}],"submitter_id":"","submitted_date":"","submitted_by":"","approver_id":"","shipping_charge":0.0,"bcy_shipping_charge":0.0,"adjustment":0.0,"bcy_adjustment":0.0,"adjustment_description":"","roundoff_value":0.0,"transaction_rounding_type":"no_rounding","sub_total":14000.0,"bcy_sub_total":14000.0,"sub_total_inclusive_of_tax":0.0,"sub_total_exclusive_of_discount":14000.0,"discount_total":0.0,"bcy_discount_total":0.0,"discount_percent":0.0,"total":14000.0,"bcy_total":14000.0,"tax_total":0.0,"bcy_tax_total":0.0,"price_precision":2,"taxes":[],"invoice_ids":[],"billing_address":{"address":"37275 St Rt 17m M","street2":"","city":"Middle Island","state":"NY","zip":"11953","country":"United States","fax":"","phone":"555-555-5555","attention":""},"shipping_address":{"address":"","street2":"","city":"","state":"","zip":"","country":"","fax":"","phone":"","attention":""},"customer_default_billing_address":{"zip":"11953","country":"United States","address":"37275 St Rt 17m M","city":"Middle Island","phone":"555-555-5555","street2":"","state":"NY","fax":"","state_code":""},"notes":"Looking forward for your business.","terms":"","custom_fields":[],"custom_field_hash":{},"template_id":"2168266000000017003","template_name":"Standard Template","template_type":"standard","page_width":"8.27in","page_height":"11.69in","orientation":"portrait","created_time":"2020-01-27T16:34:42-0500","last_modified_time":"2020-01-27T16:34:42-0500","created_by_id":"2168266000000069001","last_modified_by_id":"2168266000000069001","contact_persons_details":[],"salesperson_id":"","salesperson_name":"","attachment_name":"","can_send_in_mail":false,"can_send_estimate_sms":true,"allow_partial_payments":false,"payment_options":{"payment_gateways":[]},"retainerinvoices":[],"accept_retainer":false,"retainer_percentage":"0.00","approvers_list":[]}}											
+*/											
+											
+											
+document_id = "bhz1v97a22b01a76e4f7dae361e22efa6fef3";											
+res = zoho.writer.getMergeFields(document_id, "crmwriter");											
+info res;											
+email = "liorizik@gmail.com";											
+											
+output_format = "inline";											
+m = map();											
+m.put("Salutation","hgfhf");											
+m.put("Salutation1","hgfhf");											
+m.put("Last_Name","hgfhf");											
+m.put("House_Name_Number","hgfhf");											
+m.put("postcodelookup1__Street","hgfhf");											
+m.put("postcodelookup1__City","hgfhf");											
+m.put("postcodelookup1__Postal_Code","hgfhf");											
+m.put("Salutation","hgfhf");											
+m.put("Salutation1","hgfhf");											
+m.put("Last_Name","hgfhf");											
+m.put("House_Name_Number","hgfhf");											
+m.put("postcodelookup1__Street","hgfhf");											
+m.put("postcodelookup1__City","hgfhf");											
+m.put("postcodelookup1__Postal_Code","hgfhf");											
+m.put("Strategy","hgfhf");											
+m.put("Our_Recommended_price","hgfhf");											
+m.put("Fee","hgfhf");											
+m.put("Special_agreements","hgfhf");											
+m.put("Owner","hgfhf");											
+rl_fields = map();											
+rl_fields.put("merge_data",{"data":m});											
+rl_fields.put("subject","sfdsfdsf");											
+rl_fields.put("message","sfdsfdsf");											
+res = zoho.writer.mergeAndSend(document_id, output_format, email, rl_fields, "crmwriter");											
+info res;											
+											
+/*											
+											
+											
+*/											
+											
+											
+DealID = 2578777000049430052;											
+Deal = zoho.crm.getRecordById("Deals",DealID);											
+Contact = zoho.crm.getRecordById("Contacts",Deal.get("Contact_Name").get("id"));											
+customerDetails = Map();											
+customerDetails.put("name",Deal.get("Contact_Name").get("name"));											
+customerDetails.put("email",Contact.get("Email"));											
+if(!Contact.get("Mobile").isNull())											
+{											
+	customerDetails.put("phone_number",Contact.get("Mobile"));										
+}											
+else											
+{											
+	customerDetails.put("phone_number",Contact.get("Home_Phone"));										
+}											
+Time_Zone = "America/Belize";											
+Service = 3845949000000144050;											
+// Live Web Streaming Open House											
+Appointment_Time = Deal.get("Appointment_Time").toTime("yyyy-MM-dd'T'HH:mm:ss");											
+Staff = 3845949000000027006;											
+/*											
+3845949000000027006 =  katy@acquistorealestate.com;											
+*/											
+info "Service: " + Service;											
+info "Appointment_Time: " + Appointment_Time;											
+info "customerDetails: " + customerDetails;											
+info "Time_Zone: " + Time_Zone;											
+info "Staff: " + Staff;											
+Res = zoho.bookings.createAppointment(Service,Appointment_Time,customerDetails,Staff,Time_Zone,TRUE,"bookings_oauth_connection");											
+info Res;											
+											
+											
+											
+											
+											
+											
+Send SMS for D7 Clients											
+//ID = 4481243000001022639;											
+Showings = zoho.crm.getRecordById("Showings",ID);											
+//resp											
+Opportunity = zoho.crm.getRecordById("Deals",Showings.get("Opportunity").get("id"));											
+Seller = zoho.crm.getRecordById("Contacts",Opportunity.get("Contact_Name").get("id"));											
+Buyer = zoho.crm.getRecordById("Contacts",Opportunity.get("Contact_Name").get("id"));											
+messageToBeSent = "The property on " + Showings.get("Name") + " will be viewsed on " + Showings.get("Showing_Time").toTime("yyyy-MM-dd'T'HH:mm:ss").toString("yyyy-MM-dd'T'HH:mm:ss");											
+Mobile = Seller.get("Mobile");											
+websenderAccUsr = zoho.crm.getOrgVariable("d7sms.Authuser");											
+websenderAccPass = zoho.crm.getOrgVariable("d7sms.Authpass");											
+websenderfrom = zoho.crm.getOrgVariable("d7sms__from");											
+mappp = Map();											
+mappp.put("username",websenderAccUsr);											
+mappp.put("password",websenderAccPass);											
+mappp.put("from",websenderfrom);											
+mappp.put("content",messageToBeSent);											
+ph_num = Mobile.replaceAll("[^0-9]","");											
+if(ph_num.length() > 6)											
+{											
+	mappp.put("to",ph_num);										
+	respp = postUrl("http://h1sms.websender.online/send?",mappp);										
+	info respp;										
+	if(respp.startsWith("Success"))										
+	{										
+		status = "Success";									
+	}										
+	else										
+	{										
+		status = "Error";									
+	}										
+	m = Map();										
+	m.put("Name","SMS Generated from Custom function - Book Viewings Module");										
+	m.put("websender__Message",messageToBeSent);										
+	m.put("websender__Source",websenderfrom);										
+	m.put("websender__Destination",ph_num);										
+	m.put("websender__Direction","Outgoing");										
+	m.put("websender__Status",status);										
+	m.put("websender__Contact",Opportunity.get("Contact_Name").get("id"));										
+	res = zoho.crm.createRecord("d7sms__D7SMS",m);										
+	info res;										
+}											
+											
+											
+											
+											
+//SMSID = 2578777000050467016;											
+SMS = zoho.crm.getRecordById("d7sms__D7SMS",SMSID);											
+//Find the record											
+ModuleName = "";											
+if(!SMS.get("d7sms__Contact").isNull())											
+{											
+	RecordDetails = zoho.crm.getRecordById("Contacts",SMS.get("d7sms__Contact").get("id"));										
+	ModuleName = "d7sms__Contact";										
+	ContactID = RecordDetails.get("id");										
+}											
+if(!SMS.get("d7sms__Lead").isNull())											
+{											
+	RecordDetails = zoho.crm.getRecordById("Leads",SMS.get("d7sms__Lead").get("id"));										
+	ModuleName = "d7sms__Lead";										
+	ContactID = RecordDetails.get("id");										
+}											
+if(!SMS.get("d7sms__Deal").isNull())											
+{											
+	Deal = zoho.crm.getRecordById("Deals",SMS.get("d7sms__Deal").get("id"));										
+	if(!Deal.get("Contact_Name").isNull())										
+	{										
+		RecordDetails = zoho.crm.getRecordById("Contacts",Deal.get("Contact_Name").get("id"));									
+		ModuleName = "d7sms__Contact";									
+		ContactID = RecordDetails.get("id");									
+	}										
+}											
+Mobile = ifnull(RecordDetails.get("Mobile"),"");											
+Text_Message = SMS.get("d7sms__Message");											
+From_SMS = SMS.get("d7sms__Destination");											
+//get the correct owner based on the last sms sent											
+Messages = zoho.crm.searchRecords("d7sms__D7SMS","(d7sms__Source:equals:" + From_SMS + ")",1,200,{"sort_by":"Created_Time","sort_order":"desc"});											
+//info Messages;											
+if(Messages.size() > 0)											
+{											
+	Count = 0;										
+	for each  Message1 in Messages										
+	{										
+		if(Count == 0)									
+		{									
+			ownerid = Message1.get("Owner").get("id");								
+			ownername = Message1.get("Owner").get("name");								
+		}									
+		Count = Count + 1;									
+	}										
+	recentrecord = Messages.get(0);										
+}											
+else											
+{											
+	ownerid = 2578777000019732001;										
+	ownername = "Katy McGillen";										
+}											
+info ownername;											
+email = zoho.crm.getRecordById("users",ownerid).get("users").get(0).get("email");											
+MessageToUser = "Message From " + RecordDetails.get("First_Name") + " " + RecordDetails.get("Last_Name") + " To " + ownername + ". The Message is: " + Text_Message + " https://crm.zoho.com/crm/org647420822/tab/CustomModule23/" + SMSID;											
+info MessageToUser;											
+post = zoho.cliq.postToUser(email,MessageToUser,"cliq");											
+if(post.get("code") == "operation_failed")											
+{											
+	post = zoho.cliq.postToBot("mikeacquisto",MessageToUser,"cliq");										
+}											
+info post;											
+//post = zoho.cliq.postToChannel(<TEXT>, <TEXT>)											
+											
+											
+											
+Lead = zoho.crm.getRecordById("Leads",LeadID);											
+deal_values = Map();											
+deal_values.put("Product",Lead.get("Product").get("id"));											
+deal_values.put("Deal_Name",Lead.get("Product").get("name"));											
+deal_values.put("Pipeline","Standard");											
+deal_values.put("Stage","Initial Enquiry/Qualification");											
+deal_values.put("Owner",Lead.get("Owner").get("id"));											
+//fo deal_values;											
+response = zoho.crm.convertLead(LeadID,{"Deals":deal_values});											
+//"Contacts":"1705347000022293010","Deals":"1705347000022293014","Accounts":"1705347000022293006"}											
+m = Map();											
+m.put("Owner",Lead.get("Owner").get("id"));											
+res = zoho.crm.updateRecord("Contacts",response.get("Contacts"),m);											
+res = zoho.crm.updateRecord("Deals",response.get("Deals"),m);											
+res = zoho.crm.updateRecord("Accounts",response.get("Accounts"),m);											
+											
+											
+											
+// get Deal record information											
+Deal = zoho.crm.getRecordById('Deals',DealID);											
+m = Map();											
+// have variables for temporary followup fields and then on the real followup fields											
+if(!Deal.get("Followup_Date").isNull())											
+{											
+	m.put("Followup",Deal.get("Followup_Date"));										
+	m.put("Followup_Date","");										
+}											
+if(!Deal.get("Followup_Note").isNull())											
+{											
+	m.put("Followup_Comments",Deal.get("Followup_Note"));										
+	// adding follow up comments to Notes										
+	notesMap = {"Parent_Id":DealID,"Note_Title":"FollowupNote","Note_Content":Deal.get("Followup_Note"),"$se_module":"Deals"};										
+	notesResponse = zoho.crm.createRecord("Notes",notesMap);										
+	m.put("Followup_Note","");										
+	// clearing out temporary comments here										
+}											
+// save record											
+zoho.crm.updateRecord("Deals",DealID,m);											

@@ -1,0 +1,21 @@
+// Screenshot from lead website and added to lead image Web development
+lead = zoho.crm.getRecordById("Leads",lead_id);
+web_asked = lead.get("Website");
+api_location = "https://www.googleapis.com/pagespeedonline/v5/runPagespeed?screenshot=true&";
+response = invokeurl
+[
+	url :api_location + "url=" + web_asked
+	type :GET
+];
+base = response.get("lighthouseResult").get("audits").get("final-screenshot").get("details").get("data").replaceAll("data:image/jpeg;base64,","");
+file = zoho.encryption.base64DecodeToFile(base,"screenshot_file.jpeg");
+files = List();
+file.setParamName("file");
+files.add(file);
+var = invokeurl
+[
+	url :"https://www.zohoapis.com/crm/v2/Leads/" + lead_id + "/photo"
+	type :POST
+	files:files
+	connection:"crm"
+];

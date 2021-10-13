@@ -1,0 +1,99 @@
+/* 
+Función para Tomar los campos de bedrooms y relacionarlos con los de las propiedades
+*/
+DealRec = zoho.crm.getRecordById("Deals",DealID);
+Houseprice = ifnull(DealRec.get("Estimated_Price"),0);
+number = ifnull(DealRec.get("Number_of_bedrooms"),"0");
+if(Houseprice != 0)
+{
+	lowprice = Houseprice * 0.95;
+	highprice = Houseprice * 1.05;
+}
+if(number != "6+" && number != "0")
+{
+	n1 = number.toDecimal().round(1);
+	n2 = n1 - 0.5;
+	n3 = n1 + 0.5;
+	if(n1.endswith("0"))
+	{
+		n1 = n1.substring(0,1);
+	}
+	if(n2.endswith("0"))
+	{
+		n2 = n2.substring(0,1);
+	}
+	if(n3.endswith("0"))
+	{
+		n3 = n3.substring(0,1);
+	}
+	if(n3.toText() == "6.5")
+	{
+		n3 = "6+";
+	}
+	if(n2.toText() == "0.5")
+	{
+		n2 = "1";
+	}
+}
+else
+{
+	n1 = number;
+	n2 = "6";
+	n3 = n1;
+}
+info n1;
+info n2;
+info n3;
+matchmsg = "Not Found";
+crmRes = zoho.crm.searchRecords("Properties","(Bedrooms_count:starts_with:" + n1 + ")");
+
+for each ele in crmRes
+{
+	//proBed=proBed.toDecimal();
+	proPrice = ifnull(ele.get("Property_Selling_Value"),"0");
+	if(proPrice != "0")
+	{
+		if(proPrice >= lowprice && proPrice <= highprice)
+		{
+			UpdateRec = zoho.crm.updateRecord("Properties",ele.get("id"),Map:String({"Opportunity":DealID}));
+			matchmsg = "Found and Listed";
+		}
+	}
+}
+if(n1 != n2)
+{
+	crmRes = zoho.crm.searchRecords("Properties","(Bedrooms_count:starts_with:" + n2 + ")");
+	//info crmRes;
+	for each  ele in crmRes
+	{
+		//proBed=proBed.toDecimal();
+		proPrice = ifnull(ele.get("Property_Selling_Value"),"0");
+		if(proPrice != "0")
+		{
+			if(proPrice >= lowprice && proPrice <= highprice)
+			{
+				UpdateRec = zoho.crm.updateRecord("Properties",ele.get("id"),Map:String({"Opportunity":DealID}));
+				matchmsg = "Found and Listed";
+			}
+		}
+	}
+}
+if(n1 != n3)
+{
+	crmRes = zoho.crm.searchRecords("Properties","(Bedrooms_count:starts_with:" + n3 + ")");
+	//info crmRes;
+	for each  ele in crmRes
+	{
+		//proBed=proBed.toDecimal();
+		proPrice = ifnull(ele.get("Property_Selling_Value"),"0");
+		if(proPrice != "0")
+		{
+			if(proPrice >= lowprice && proPrice <= highprice)
+			{
+				UpdateRec = zoho.crm.updateRecord("Properties",ele.get("id"),Map:String({"Opportunity":DealID}));
+				matchmsg = "Found and Listed";
+			}
+		}
+	}
+}
+return matchmsg;

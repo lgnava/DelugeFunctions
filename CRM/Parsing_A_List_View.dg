@@ -1,0 +1,31 @@
+leads = zoho.crm.getRecords("Leads",0,200,{"cvid":3509146000043249003});
+for each  lead in leads
+{
+	info lead.get("id");
+	if(!lead.get("Phone").isNull()){
+		Phone = lead.get("Phone").replaceAll("\W|_","",false);
+		if(startsWith(Phone,"1"))
+		{
+			Phone = "+" + Phone;
+		}
+		else
+		{
+			Phone = "+1" + Phone;
+		}
+		info Phone;
+
+		m = Map();
+		m.put("Phone",Phone);
+		result = zoho.crm.updateRecord("Leads", lead.get("id"), m);
+		info result;
+		if(!result.get("code").isNull()){
+			if(result.get("code")=="DUPLICATE_DATA"){
+				merror = Map();
+				merror.put("Duplicated_Phone", "Yes");
+				merror.put("Duplicated_Entries", "https://crm.zoho.com/crm/org674466610/search?searchword="+Phone);
+				
+				info zoho.crm.updateRecord("Leads", lead.get("id"), merror);
+			}
+		}
+	}
+}

@@ -1,0 +1,4 @@
+sheet = zoho.sheet.getSheets("kyabq02f7b1c8c12042c0b76f9cde0d18443e");
+info sheet;
+sheet_data = zoho.sheet.getRecords("kyabq02f7b1c8c12042c0b76f9cde0d18443e","Support Staff");
+info sheet_data.get("records");

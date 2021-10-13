@@ -1,0 +1,126 @@
+//QuoteID = 4230384000000366002;
+errMsg = "";
+Quote = zoho.crm.getRecordById("Quotes",QuoteID);
+info Quote;
+templateID = "5tqm8fa7131f4c7784172a4b3fd3bd56b21be";
+generate_sheet_map = Map();
+generate_sheet_map.put("method","workbook.createfromtemplate");
+generate_sheet_map.put("resource_id",templateID);
+generate_sheet_map.put("workbook_name","Quote TEST (Sandbox): " + Quote.get("Quote_Name"));
+generate_sheet_from_template = invokeurl
+[
+	url :"https://sheet.zoho.com/api/v2/createfromtemplate"
+	type :POST
+	parameters:generate_sheet_map
+	connection:"sheets"
+];
+sheet_id = generate_sheet_from_template.get("resource_id");
+quote_date = Quote.get("Created_Time").toString("MM-dd-yyyy");
+info quote_date;
+quote_name = Quote.get("Quote_Name");
+quote_contact_name = Quote.get("Contact_Name").get("name");
+/*
+** Replacing standalone values that are between "??"
+*/
+replace_quote_date = zoho.sheet.replace(sheet_id,"workbook","?DATE?",quote_date);
+replace_quote_number = zoho.sheet.replace(sheet_id,"workbook","?quote_number?",quote_name);
+replace_quote_contact_name = zoho.sheet.replace(sheet_id,"workbook","?quote_contact_name?",quote_contact_name);
+product_table_row = 78;
+optional_table_row = 85;
+product_details = Quote.get("Product_Details");
+optional_table_row = optional_table_row + product_details.size();
+for each  product in product_details
+{
+	row = List();
+	row.add(product.get("product").get("name"));
+	row.add("");
+	row.add(product.get("quantity"));
+	row.add(IF(product.get("product_description").isNull(),"",product.get("product_description")));
+	row.add("$" + product.get("unit_price"));
+	row.add("$" + product.get("net_total"));
+	insert_row_map = Map();
+	insert_row_map.put("method","row.insert");
+	insert_row_map.put("worksheet_name","Sheet1");
+	insert_row_map.put("row",product_table_row);
+	insert_row = invokeurl
+	[
+		url :"https://sheet.zoho.com/api/v2/" + sheet_id
+		type :POST
+		parameters:insert_row_map
+		connection:"sheets"
+	];
+	info insert_row;
+	set_row_map = Map();
+	set_row_map.put("method","row.content.set");
+	set_row_map.put("worksheet_name","Sheet1");
+	set_row_map.put("row",product_table_row);
+	set_row_map.put("column_array",{1,2,3,4,5,6});
+	set_row_map.put("data_array",row);
+	set_row = invokeurl
+	[
+		url :"https://sheet.zoho.com/api/v2/" + sheet_id
+		type :POST
+		parameters:set_row_map
+		connection:"sheets"
+	];
+	info set_row;
+	product_table_row = product_table_row + 1;
+}
+optional_products = zoho.crm.getRelatedRecords("Products12","Quotes",QuoteID);
+total_for_optional = 0;
+for each  p in optional_products
+{
+	row = List();
+	product = zoho.crm.getRecordById("Products",p.get("Optional_Products").get("id"));
+	row.add(product.get("Product_Name"));
+	row.add("");
+	row.add("1");
+	row.add(IF(product.get("Description").isNull(),"",product.get("Description")));
+	row.add("$" + product.get("Unit_Price"));
+	row.add("$" + product.get("Unit_Price"));
+	insert_row_map = Map();
+	insert_row_map.put("method","row.insert");
+	insert_row_map.put("worksheet_name","Sheet1");
+	insert_row_map.put("row",optional_table_row);
+	insert_row = invokeurl
+	[
+		url :"https://sheet.zoho.com/api/v2/" + sheet_id
+		type :POST
+		parameters:insert_row_map
+		connection:"sheets"
+	];
+	info insert_row;
+	set_row_map = Map();
+	set_row_map.put("method","row.content.set");
+	set_row_map.put("worksheet_name","Sheet1");
+	set_row_map.put("row",optional_table_row);
+	set_row_map.put("column_array",{1,2,3,4,5,6});
+	set_row_map.put("data_array",row);
+	set_row = invokeurl
+	[
+		url :"https://sheet.zoho.com/api/v2/" + sheet_id
+		type :POST
+		parameters:set_row_map
+		connection:"sheets"
+	];
+	info set_row;
+	optional_table_row = optional_table_row + 1;
+	total_for_optional = total_for_optional + product.get("Unit_Price");
+}
+zoho.sheet.replace(sheet_id,"workbook","?total?",Quote.get("Grand_Total"));
+zoho.sheet.replace(sheet_id,"workbook","?total_optional?","$" + total_for_optional);
+info optional_products;
+return "Sheet Created Successfully";
+/*
+
+method row.insert
+worksheet_name
+row
+
+
+method row.content.set
+worksheet_name
+row
+column_array
+data_array
+*/

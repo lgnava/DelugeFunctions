@@ -1,0 +1,130 @@
+Deal = zoho.crm.getRecordById("Deals",DealID);
+parentFolder = "f3elg0bee20a848f54ea2835b54e571be8118";
+if(!(Deal.get("WorkDrive_Link").isNull() && Deal.get("WorkDrive_External_Link").isNull()))
+{
+	return;
+}
+
+FolderName = Deal.get("Deal_Name") + " - Uploads";
+info FolderName;
+workdrive_folder = zoho.workdrive.createFolder(FolderName,parentFolder,"workdrive");
+info workdrive_folder;
+folder_creation_time = workdrive_folder.get("data").get("attributes").get("created_time_in_millisecond");
+folder_id = workdrive_folder.get("data").get("id");
+workdrive_permalink = workdrive_folder.get("data").get("attributes").get("permalink");
+//Generate password
+/*
+password = "";
+year = now.getYear();
+seconds = now.getSeconds();
+password = password + year.toString().left(2);
+password = password + Today.day() + 40;
+password = password + "&";
+password = password + Contact.get("Last_Name").left(4);
+password = password + seconds;
+password = password + IF(seconds % 2 == 0,"_","$");
+*/
+headers = Map();
+headers.put("Accept","application/vnd.api+json");
+sharing_parameters = "{\"data\": {\"attributes\":{\"resource_id\":\"" + parentFolder + "\", \"link_name\": \"" + FolderName + "\", \"request_user_data\": false, \"allow_download\": true, \"role_id\":\"6\" }, \"type\": \"links\" } }";
+create_sharing_link = invokeurl
+[
+	url :"https://workdrive.zoho.com/api/v1/links"
+	type :POST
+	parameters:sharing_parameters.toString()
+	headers:headers
+	connection:"workdrive"
+];
+//info create_sharing_link;
+sharing_link = create_sharing_link.get("data").get("attributes").get("link");
+//info sharing_link;
+update_map = Map();
+update_map.put("WorkDrive_Link",workdrive_permalink);
+update_map.put("WorkDrive_External_Link",sharing_link);
+response = zoho.crm.updateRecord("Deals",DealID,update_map);
+info response;
+
+
+// old version
+// old version
+// old version
+// old version
+// old version
+// old version
+// old version
+// old version
+// old version
+// old version
+
+// OpportunityID = 4481243000002851795;
+Opportunity = zoho.crm.getRecordById("Deals",OpportunityID);
+ParentFolderId = "kys4c734ab1456a234677bd7a7e8a334f361a";
+// lior's work/MediaDays/...
+Today = zoho.currenttime;
+FolderName = Opportunity.get("Deal_Name") + " - Property " + Today.toString("YYYY-MM-dd HH:ss");
+// Creates Opportunity folder
+SubParentFolder = zoho.workdrive.createFolder(FolderName,ParentFolderId,"workdrive_oauth_connection");
+// Creates Media folder and shareable link
+MediaFolder = zoho.workdrive.createFolder("Media",SubParentFolder.get("data").get("id"),"workdrive_oauth_connection");
+media_id = MediaFolder.get("data").get("id");
+paramdata = {"data":{"attributes":{"resource_id":media_id,"allow_download":true,"request_user_data":false,"link_name":"samplelink","expiration_date":"2030-01-01","role_id":"5"},"type":"links"}};
+mp = Map();
+mp.put("Accept","application/vnd.api+json");
+response = invokeurl
+[
+	url :"https://workdrive.zoho.com/api/v1/links"
+	type :POST
+	parameters:paramdata.toString()
+	headers:mp
+	connection:"workdrive_oauth_connection"
+];
+info response;
+media_url = response.get("data").get("attributes").get("link");
+// Creates Dcuments folder
+DocumentsFolder = zoho.workdrive.createFolder("Documents",SubParentFolder.get("data").get("id"),"workdrive_oauth_connection");
+documents_url = DocumentsFolder.get("data").get("attributes").get("permalink");
+documents_id = DocumentsFolder.get("data").get("id");
+m = Map();
+m.put('Work_Drive_Documents',documents_url);
+m.put('Work_Drive_Documents_ID',documents_id);
+m.put('Work_Drive_Media',media_url);
+m.put('Work_Drive_Media_ID',media_id);
+UpdatedMD = zoho.crm.updateRecord("Deals",OpportunityID,m);
+info UpdatedMD;
+
+
+
+
+
+
+/*/*
+VERY BORING VERSION
+leadname = firstname + " " + lastname;
+
+teamfolderid = "yyyyy";
+
+paramdata = "{\"data\": {\"attributes\": {\"name\": " + leadname + ",\"parent_id\":" + teamfolderid + "},\"type\":\"files\"}}";
+
+mp = Map();
+
+mp.put("Accept","application/vnd.api+json");
+
+response = invokeurl
+
+[
+
+url :"https://workdrive.zoho.com/api/v1/files"
+
+type :POST
+
+parameters:paramdata.toString()
+
+headers:mp
+
+connection:"xxxxxx"
+
+];
+
+folderid = response.get("data").get("id");
+
+update = zoho.crm.updateRecord("Leads", leadid, {"zzzzz":folderid});

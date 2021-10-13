@@ -1,0 +1,58 @@
+// TEJAL
+
+//AppInfoId = 4614186000001630007;
+AppInfo = zoho.crm.getRecordById("Appointment_Info", AppInfoId);
+ClientID = AppInfo.get("Client_Name").get("id");
+Clinician = AppInfo.get("Clinician");
+DateM = AppInfo.get("Date_of_Communication_related_to_meeting_look_up");
+
+
+i = List();
+j = {1,2};
+
+for each k in j
+{
+	for each kk in j{
+		for each kkk in j{
+			i.add(kkk);
+		}
+	}
+}
+
+AllMeetings = List();
+k = 1;
+for each jj in i
+{
+	meetings = zoho.crm.getRecords("Events", k);
+	if(meetings.size()>0){
+		AllMeetings.addAll(meetings);
+	}
+	k = k + 1;
+}
+
+for each meeting in AllMeetings
+{
+	
+	if(!meeting.get("Who_Id").isNull()){
+		if(meeting.get("Who_Id").get("id") == ClientID){
+			if(meeting.get("Start_DateTime").toString("YYYY-MM-dd") == DateM){
+				/*info "MIRA: ";
+				info meeting.get("id");
+				info meeting.get("Who_Id");
+				info meeting.get("Start_DateTime").toString("YYYY-MM-dd");*/
+				if(!meeting.get("acuityscheduling1__Calendar_Name").isNull()){
+					if(meeting.get("acuityscheduling1__Calendar_Name") == Clinician){
+						FoundMeeting = meeting;
+					}
+				}
+			}
+		}
+	}
+}
+
+if(!FoundMeeting.isNull()){
+	m = Map();
+	m.put("CPT1", AppInfo.get("CPT_1"));
+	m.put("CPT2", AppInfo.get("CPT_22"));
+	info zoho.crm.updateRecord("Events", FoundMeeting.get("id"), m);
+}

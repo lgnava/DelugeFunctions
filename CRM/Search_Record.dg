@@ -1,0 +1,33 @@
+Lead = zoho.crm.getRecordById("Leads",LeadID);
+Phone = Lead.get("Phone").replaceAll("\W|_","",false);
+if(startsWith(Phone,"1"))
+{
+	Phone = "+" + Phone;
+}
+else
+{
+	Phone = "+1" + Phone;
+}
+info Phone;
+Found = 0;
+Duplicated_Leads = "";
+Leads = zoho.crm.searchRecords("Leads","(Phone:equals:" + Phone + ")");
+for each  Lead in Leads
+{
+	if(Lead.get("id") != LeadID)
+	{
+		Found = 1;
+		Duplicated_Leads = "Lead Id: " + Lead.get("id") + "\n";
+	}
+}
+m = Map();
+if(Found == 1)
+{
+	m.put("Duplicated_Lead","Yes");
+	notesMap = {"Parent_Id":LeadID,"Note_Title":"Duplicated Leads","Note_Content":Duplicated_Leads,"$se_module":"Leads"};
+	notesResponse = zoho.crm.createRecord("Notes",notesMap);
+	info notesResponse;
+}
+m.put("Phone",Phone);
+res = zoho.crm.updateRecord("Leads",LeadID,m);
+info res;

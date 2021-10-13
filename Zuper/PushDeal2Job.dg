@@ -1,0 +1,628 @@
+//CONFIG
+URL = "https://app.zuperpro.com/api";
+API_KEY = "bffdf742fd06b8d2ea011eb88eef838c";
+QUOTE_SYNC_STAGE = "Closed Won";
+JOB_PRIORITY = "MEDIUM";
+CURRENCY = "USD";
+JOB_DUE_DATE_FIELD = "Estimated_PM_Visit_Date";
+JOB_CATEGORY_FIELD = "Zuper_Job_Category";
+JOB_ID_FIELD = "Zuper_Job_Id";
+CUSTOMER_ID_FIELD = "Zuper_Customer_Id";
+CUSTOMER_CATEGORY_FIELD = "Zuper_Category";
+JOB_START_TIME_FIELD = "";
+JOB_END_TIME_FIELD = "";
+APPEND_TITLE_FIELD = "";
+//CONFIG IF BOOKS INTEGRATED
+ZOHO_BOOKS_ORGANIZATION_ID = "741627954";
+BOOKS_CRM_CONTACT_ID_FIELD = "zcrm_contact_id";
+ZOHO_BOOKS_CONNECTION_NAME = "zoho_books_connection";
+/*
+CUSTOM FIELDS TO BE CREATED :
+Zuper Due Date - Date Type
+Zuper Job Id   - Single Line
+Zuper Category - Pick List with Same categories as Zuper
+*/
+//HEADERS
+headersMap = Map();
+headersMap.put("x-api-key",API_KEY);
+headersMap.put("Content-Type","application/json");
+//
+deal = zoho.crm.getRecordById("Deals",dealId);
+info deal;
+contactInfo = deal.get("Contact_Name");
+if(contactInfo == null)
+{
+	info "No Contact found";
+	return;
+}
+contactDetails = zoho.crm.getRecordById("Contacts",contactInfo.get("id"));
+if(contactDetails == null)
+{
+	info "Contact details not found";
+	return;
+}
+zuperCategories = getUrl(URL + "/jobs/category",headersMap);
+zuperCategories = zuperCategories.get('data');
+categoryName = deal.get(JOB_CATEGORY_FIELD);
+if(categoryName == null)
+{
+	info "Category Name is not found in Deal";
+	return;
+}
+zuperCategoryUid = null;
+for each  category in zuperCategories
+{
+	if(zuperCategoryUid == null && category.get("category_name") == categoryName)
+	{
+		zuperCategoryUid = category.get("category_uid");
+	}
+}
+if(zuperCategoryUid == null)
+{
+	info "Category is Not matched with Zuper Categories";
+	return;
+}
+info zuperCategoryUid;
+contactId = contactDetails.get("id");
+// GENERATING ZUPER CUSTOMER JSON
+customerMap = Map();
+zuperCustomerCategories = getUrl(URL + "/customers/category",headersMap);
+zuperCustomerCategories = zuperCustomerCategories.get('data');
+customerCategoryName = contactDetails.get(CUSTOMER_CATEGORY_FIELD);
+zuperCustomerCategoryUid = null;
+if(customerCategoryName != null)
+{
+	for each  customerCategory in zuperCustomerCategories
+	{
+		info customerCategory.get("category_name");
+		if(zuperCustomerCategoryUid == null && customerCategory.get("category_name") == customerCategoryName)
+		{
+			zuperCustomerCategoryUid = customerCategory.get("_id");
+		}
+	}
+}
+if(zuperCustomerCategoryUid != null)
+{
+	customerMap.put("customer_category",zuperCustomerCategoryUid);
+}
+info "zuperCategoryUid";
+customerMap.put("customer_first_name",contactDetails.get("First_Name"));
+customerMap.put("customer_last_name",contactDetails.get("Last_Name"));
+customerMap.put("customer_email",contactDetails.get("Email"));
+customerMap.put("customer_description",contactDetails.get("Description"));
+accountInfo = contactDetails.get("Account_Name");
+if(accountInfo != null)
+{
+	customerMap.put("customer_company_name",accountInfo.get("name"));
+}
+// TAGS
+tagsList = List();
+contactTag = "Zoho_CRM_Contact_" + contactId;
+tagsList.add(contactTag);
+customerMap.put("customer_tags",tagsList);
+// ADDRESS CHECK
+mailingStreet = contactDetails.get("Mailing_Street");
+mailingCity = contactDetails.get("Mailing_City");
+hasMailingAddress = mailingStreet != null && mailingCity != null;
+otherStreet = contactDetails.get("Other_Street");
+otherCity = contactDetails.get("Other_City");
+hasOtherAddress = otherStreet != null && otherCity != null;
+//CUSTOMER ADDRESSES 
+customerServiceAddress = Map();
+customerBillingAddress = Map();
+// SERVICE ADDRESS
+customerMailingAddressMap = Map();
+if(hasMailingAddress)
+{
+	customerMailingAddressMap.put("street",mailingStreet);
+	customerMailingAddressMap.put("landmark","");
+	customerMailingAddressMap.put("city",mailingCity);
+	customerMailingAddressMap.put("state",contactDetails.get("Mailing_State"));
+	customerMailingAddressMap.put("country",contactDetails.get("Mailing_Country"));
+	customerMailingAddressMap.put("zip_code",contactDetails.get("Mailing_Zip"));
+}
+// OTHER ADDRESS 
+customerOtherAddressMap = Map();
+if(hasOtherAddress)
+{
+	customerOtherAddressMap.put("street",otherStreet);
+	customerOtherAddressMap.put("landmark","");
+	customerOtherAddressMap.put("city",otherCity);
+	customerOtherAddressMap.put("state",contactDetails.get("Other_State"));
+	customerOtherAddressMap.put("country",contactDetails.get("Other_Country"));
+	customerOtherAddressMap.put("zip_code",contactDetails.get("Other_Zip"));
+}
+// ZUPER ADDRESS MAPPING
+if(hasMailingAddress && hasOtherAddress)
+{
+	customerServiceAddress = customerMailingAddressMap;
+	customerBillingAddress = customerOtherAddressMap;
+	customerMap.put("customer_address",customerMailingAddressMap);
+	customerMap.put("customer_billing_address",customerOtherAddressMap);
+}
+else if(!hasMailingAddress)
+{
+	customerServiceAddress = customerOtherAddressMap;
+	customerBillingAddress = customerOtherAddressMap;
+	customerMap.put("customer_billing_address",customerOtherAddressMap);
+	customerMap.put("customer_address",customerOtherAddressMap);
+}
+else
+{
+	customerServiceAddress = customerMailingAddressMap;
+	customerBillingAddress = customerMailingAddressMap;
+	customerMap.put("customer_billing_address",customerMailingAddressMap);
+	customerMap.put("customer_address",customerMailingAddressMap);
+}
+// CONTACT DETAILS
+customerPhoneMap = Map();
+customerPhoneMap.put("mobile",contactDetails.get("Mobile"));
+customerPhoneMap.put("home",contactDetails.get("Home_Phone"));
+customerPhoneMap.put("work",contactDetails.get("Phone"));
+customerMap.put("customer_contact_no",customerPhoneMap);
+info customerMap;
+pushedCustomFields = List();
+existingCustomFields = null;
+// CUSTOM FIELDS 
+customFieldsList = List();
+// ZOHO ACCOUNT ID AS CUSTOM FIELD
+if(accountInfo != null)
+{
+	tempMap = Map();
+	tempMap.put("label","Associated Zoho CRM Account ID");
+	tempMap.put("value",accountInfo.get("id") + "");
+	customFieldsList.add(tempMap);
+	pushedCustomFields.add("Associated Zoho CRM Account ID");
+}
+// ZOHO CONTACT ID AS CUSTOM FIELD
+tempMap = Map();
+tempMap.put("label","Zoho CRM Contact ID");
+tempMap.put("value",contactDetails.get("id") + "");
+customFieldsList.add(tempMap);
+pushedCustomFields.add("Zoho CRM Contact ID");
+// ZOHO BOOK CONTACT ID IF EXIST
+if(ZOHO_BOOKS_ORGANIZATION_ID != "")
+{
+	zoho_books_customer_id = null;
+	searchParam = {"contact_name":contactDetails.get("Full_Name")};
+	filteredBookContacts = zoho.books.getRecords("Contacts",ZOHO_BOOKS_ORGANIZATION_ID,searchParam,"zoho_books_connection");
+	info filteredBookContacts;
+	if(filteredBookContacts && filteredBookContacts.get("contacts") != null)
+	{
+		filteredBookContacts = filteredBookContacts.get("contacts");
+		for each  contact in filteredBookContacts
+		{
+			if(zoho_books_customer_id == null)
+			{
+				info contact;
+				book_contact_id = contact.get("contact_id");
+				if(book_contact_id != null)
+				{
+					bookContactDetails = zoho.books.getRecordsByID("Contacts",ZOHO_BOOKS_ORGANIZATION_ID,book_contact_id,"zoho_books_connection");
+					info bookContactDetails;
+					if(bookContactDetails && bookContactDetails.get("contact") != null)
+					{
+						bookContactDetails = bookContactDetails.get("contact");
+						info bookContactDetails.get(BOOKS_CRM_CONTACT_ID_FIELD);
+						if(bookContactDetails.get(BOOKS_CRM_CONTACT_ID_FIELD) == contactId)
+						{
+							zoho_books_customer_id = book_contact_id;
+						}
+					}
+				}
+			}
+		}
+	}
+	info "zoho_books_customer_id";
+	info zoho_books_customer_id;
+	if(zoho_books_customer_id != null)
+	{
+		tempMap = Map();
+		tempMap.put("label","Zoho Books Contact ID");
+		tempMap.put("value",zoho_books_customer_id + "");
+		pushedCustomFields.add("Zoho Books Contact ID");
+		customFieldsList.add(tempMap);
+	}
+}
+//SECONDARY EMAIL AS CUSTOM FIELD
+secondaryEmail = contactDetails.get("Secondary_Email");
+if(secondaryEmail != null)
+{
+	tempMap = Map();
+	tempMap.put("label","Secondary Email");
+	tempMap.put("value",secondaryEmail);
+	pushedCustomFields.add("Secondary Email");
+	customFieldsList.add(tempMap);
+}
+// OTHER PHONE AS CUSTOM FIELD
+otherPhone = contactDetails.get("Other_Phone");
+if(otherPhone != null)
+{
+	tempMap = Map();
+	tempMap.put("label","Other Phone");
+	tempMap.put("value",otherPhone);
+	pushedCustomFields.add("Other Phone");
+	customFieldsList.add(tempMap);
+}
+//GET ZUPER CUSTOMER CUSTOM FIELDS
+zuperCustomerCustomFields = getUrl(URL + "/settings/custom_fields?original_template=true&module_name=CUSTOMER",headersMap);
+info zuperCustomerCustomFields;
+if(zuperCustomerCustomFields.get('type') == "success")
+{
+	customFields = zuperCustomerCustomFields.get('data');
+	info customFields;
+	for each  element in customFields
+	{
+		keyName = element.get("field_name");
+		zohoKeyName = replaceAll(keyName," ","_");
+		if(contactDetails.get(zohoKeyName) != null)
+		{
+			tempMap = Map();
+			tempMap.put("label",keyName);
+			tempMap.put("value",contactDetails.get(zohoKeyName));
+			pushedCustomFields.add(keyName);
+			customFieldsList.add(tempMap);
+		}
+	}
+}
+zuperContactId = null;
+zuperContactId = contactDetails.get(CUSTOMER_ID_FIELD);
+info zuperContactId;
+if(zuperContactId != null)
+{
+	zuperCustomerDetails = getUrl(URL + "/customers/" + zuperContactId,headersMap);
+	info zuperCustomerDetails;
+	//CHECK IF RECORD ALREADY EXISTS
+	if(zuperCustomerDetails.get('type') != "success")
+	{
+		zuperContactId = null;
+	}
+	else
+	{
+		zuperCustomerDetails = zuperCustomerDetails.get('data');
+		if(zuperCustomerDetails != null)
+		{
+			existingCustomFields = zuperCustomerDetails.get("custom_fields");
+		}
+	}
+	info zuperContactId;
+}
+if(zuperContactId == null)
+{
+	filterMap = Map();
+	filterMap.put("label","Zoho CRM Contact ID");
+	filterMap.put("value",contactId + "");
+	//GET CUSTOMER WITH  ZOHO Contact ID
+	zuperCustomersByCustomField = getUrl(URL + "/customers?page=1&count=1&filter.custom_field=" + filterMap,headersMap);
+	info zuperCustomersByCustomField;
+	if(zuperCustomersByCustomField.get('type') == "success")
+	{
+		custData = zuperCustomersByCustomField.get('data');
+		if(custData.size() > 0)
+		{
+			zuperContactId = custData.get(0).get("customer_uid");
+			existingCustomFields = custData.get(0).get("custom_fields");
+		}
+	}
+}
+if(existingCustomFields != null)
+{
+	for each  element in existingCustomFields
+	{
+		keyName = element.get("label");
+		info keyName;
+		if(pushedCustomFields.contains(keyName) == false)
+		{
+			info "pushing existing field";
+			customFieldsList.add(element);
+		}
+	}
+}
+customerMap.put("custom_fields",customFieldsList);
+info customerMap;
+paramsMap = Map();
+paramsMap.put("customer",customerMap);
+httpMethod = if(zuperContactId == null,"POST","PUT");
+info "zuper Contact Id";
+info zuperContactId;
+temp_URL = if(zuperContactId == null,URL + "/customers",URL + "/customers/" + zuperContactId);
+paramsMap.put("customer_uid",zuperContactId);
+info paramsMap;
+resp = invokeUrl(temp_URL,httpMethod,paramsMap.toString(),headersMap);
+customerUid = resp.get("customer_uid");
+if(customerUid != null)
+{
+	// PUSHING ZUPER CUSTOMER ID TO ZOHO FIELD ON CREATION
+	info "created New Contact";
+	mp = Map();
+	mp.put(CUSTOMER_ID_FIELD,customerUid);
+	update = zoho.crm.updateRecord("Contacts",contactId,mp);
+	info update;
+}
+info "customerAddedResp";
+info resp;
+// TRYING TO CREATE JOB WITH THAT DEAL
+zuperJobId = deal.get(JOB_ID_FIELD);
+info zuperJobId;
+// CONSTRUCT PARAMS MAP
+jobMap = Map();
+jobTitle = deal.get("Deal_Name");
+if(APPEND_TITLE_FIELD != "" && deal.get(APPEND_TITLE_FIELD) != null)
+{
+	jobTitle = jobTitle + " - " + deal.get(APPEND_TITLE_FIELD);
+}
+jobMap.put("job_title",jobTitle);
+jobMap.put("job_category",zuperCategoryUid);
+jobMap.put("job_type","NEW");
+jobMap.put("job_priority",JOB_PRIORITY);
+jobMap.put("job_description",deal.get("Description"));
+dueDate = deal.get(JOB_DUE_DATE_FIELD);
+if(dueDate != null)
+{
+	info dueDate;
+	dueDate = toText(dueDate,'YYYY-MM-dd HH:mm:ss',"UTC");
+	info dueDate;
+	jobMap.put("due_date",dueDate);
+}
+startTime = deal.get(JOB_START_TIME_FIELD);
+endTime = deal.get(JOB_END_TIME_FIELD);
+formattedStartTime = null;
+formattedEndTime = null;
+if(startTime != null && endTime != null)
+{
+	info startTime;
+	info endTime;
+	startTime = startTime.replaceAll("T"," ");
+	endTime = endTime.replaceAll("T"," ");
+	startTime = startTime.toText("yyyy-MM-dd'T'HH:mm:ss","UTC");
+	endTime = endTime.toText("yyyy-MM-dd'T'HH:mm:ss","UTC");
+	info "StartTime";
+	info startTime;
+	info "EndTime";
+	info endTime;
+	startDatePart = startTime.subString(0,10);
+	startTimePart = startTime.subString(11,19);
+	startTimeCheck = startDatePart + " " + startTimePart;
+	endDatePart = endTime.subString(0,10);
+	endTimePart = endTime.subString(11,19);
+	endTimeCheck = endDatePart + " " + endTimePart;
+	formattedStartTime = startTimeCheck.toTime();
+	formattedEndTime = endTimeCheck.toTime();
+	info "forMattedStartTime";
+	info formattedStartTime;
+	info "formattedEndTime";
+	info formattedEndTime;
+	info formattedStartTime < formattedEndTime;
+}
+if(formattedStartTime != null && formattedEndTime != null && formattedStartTime <= formattedEndTime)
+{
+	jobMap.put("scheduled_start_time",startTime);
+	jobMap.put("scheduled_end_time",endTime);
+}
+else if(dueDate == null)
+{
+	createdTime = deal.get("Created_Time");
+	info createdTime;
+	createdTime = createdTime.replaceAll("T"," ");
+	time = toText(createdTime,'YYYY-MM-dd HH:mm:ss',"UTC");
+	info time;
+	jobMap.put("scheduled_start_time",time);
+	jobMap.put("scheduled_end_time",time);
+}
+customerUid = if(customerUid == null,zuperContactId,customerUid);
+jobMap.put("customer_uid",customerUid);
+tagsList = List();
+dealTag = "Zoho_Deal_" + dealId;
+tagsList.add(dealTag);
+jobMap.put("job_tags",tagsList);
+if(QUOTE_SYNC_STAGE != "")
+{
+	// ADD PROUDCTS
+	quotes = zoho.crm.getRelatedRecords("Quotes","Deals",dealId);
+	ZuperProducts = List();
+	for each  quote in quotes
+	{
+		quoteStage = quote.get("Quote_Stage");
+		if(quoteStage == QUOTE_SYNC_STAGE)
+		{
+			products = quote.get("Product_Details");
+			for each  product in products
+			{
+				productInfo = product.get("product");
+				tempMap = Map();
+				if(productInfo)
+				{
+					productDetails = zoho.crm.getRecordById("Products",productInfo.get("id"));
+					if(productDetails != null)
+					{
+						zuperProductId = productDetails.get("Zuper_Product_Id");
+						info zuperProductId;
+						if(zuperProductId != null)
+						{
+							zuperProductDetails = getUrl(URL + "/product/" + zuperProductId,headersMap);
+							info zuperProductDetails;
+							//CHECK IF RECORD ALREADY EXISTS
+							if(zuperProductDetails.get('type') != "success")
+							{
+								zuperProductId = null;
+							}
+							else
+							{
+								zuperProductDetails = zuperProductDetails.get('data');
+								if(zuperProductDetails.get("is_deleted") == true)
+								{
+									zuperProductId = null;
+								}
+							}
+						}
+						if(zuperProductId != null)
+						{
+							tempMap.put("product_uid",zuperProductId);
+							hasTax = zuperProductDetails.get("has_custom_tax");
+							tax = zuperProductDetails.get("tax");
+							tempMap.put("has_custom_tax",hasTax);
+							tempMap.put("tax",tax);
+						}
+						else
+						{
+							tempMap.put("has_custom_tax",false);
+							tempTax = Map();
+							tempMap.put("tax",tempTax);
+						}
+					}
+					tempMap.put("product_id",productInfo.get("id"));
+					tempMap.put("product_name",productInfo.get("name"));
+				}
+				tempMap.put("quantity",product.get("quantity"));
+				tempMap.put("price",product.get("list_price"));
+				tempMap.put("currency",CURRENCY);
+				ZuperProducts.add(tempMap);
+			}
+		}
+	}
+	jobMap.put("products",ZuperProducts);
+}
+customFieldsList = List();
+zuperJobCustomFields = getUrl(URL + "/settings/custom_fields?original_template=true&module_name=JOB",headersMap);
+if(zuperJobCustomFields.get('type') == "success")
+{
+	customFields = zuperJobCustomFields.get('data');
+	info "customFields---------------------------";
+	info customFields;
+	for each  element in customFields
+	{
+		keyName = element.get("field_name");
+		zohoKeyName = replaceAll(keyName," ","_");
+		if(deal.get(zohoKeyName) != null)
+		{
+			tempMap = Map();
+			tempMap.put("label",keyName);
+			tempMap.put("value",deal.get(zohoKeyName));
+			customFieldsList.add(tempMap);
+		}
+	}
+}
+tempMap = Map();
+tempMap.put("label","ZOHO DEAL ID");
+tempMap.put("value",dealId + "");
+customFieldsList.add(tempMap);
+jobMap.put("custom_fields",customFieldsList);
+info zuperJobId;
+if(zuperJobId != null)
+{
+	zuperJob = getUrl(URL + "/jobs/" + zuperJobId,headersMap);
+	info zuperJob;
+	//CHECK IF RECORD ALREADY EXISTS
+	if(zuperJob.get('type') != "success")
+	{
+		zuperJobId = null;
+	}
+	zuperJob = zuperJob.get('data');
+	if(zuperJob.get("is_deleted") == true)
+	{
+		zuperJobId = null;
+		info "Zuper Job is deleted";
+	}
+}
+if(zuperJobId == null)
+{
+	filterMap = Map();
+	filterMap.put("label","ZOHO DEAL ID");
+	filterMap.put("value",dealId + "");
+	//GET JOB WITH GIVEN ZOHO DEAL ID
+	zuperJobsByCustomFields = getUrl(URL + "/jobs?filter.custom_field=" + filterMap + "&page=1&count=1",headersMap);
+	info "zuperJobsByCustomFields";
+	info zuperJobsByCustomFields;
+	if(zuperJobsByCustomFields.get('type') == "success")
+	{
+		jobsData = zuperJobsByCustomFields.get('data');
+		if(jobsData.size() > 0)
+		{
+			zuperJobId = jobsData.get(0).get("job_uid");
+		}
+	}
+}
+httpMethod = if(zuperJobId == null,"POST","PUT");
+jobParamsMap = Map();
+info zuperJobId;
+dealBillingAddress = Map();
+dealServiceAddress = Map();
+// ADDRESS CHECK
+dealBillingStreet = deal.get("Billing_Street");
+dealBillingCity = deal.get("Billing_City");
+hasDealBillingAddress = dealBillingStreet != null && dealBillingCity != null;
+dealServiceStreet = deal.get("Service_Street");
+dealServiceCity = deal.get("Service_City");
+hasDealServiceAddress = dealServiceStreet != null && dealServiceCity != null;
+// DEAL ADDRESS MAP
+dealBillingAddressMap = Map();
+dealServiceAddressMap = Map();
+if(hasDealBillingAddress)
+{
+	dealBillingAddressMap.put("street",dealBillingStreet);
+	dealBillingAddressMap.put("landmark","");
+	dealBillingAddressMap.put("city",dealBillingCity);
+	dealBillingAddressMap.put("state",deal.get("Billing_State"));
+	dealBillingAddressMap.put("country","");
+	dealBillingAddressMap.put("zip_code",deal.get("Billing_Zip"));
+}
+if(hasDealServiceAddress)
+{
+	dealServiceAddressMap.put("street",dealServiceStreet);
+	dealServiceAddressMap.put("landmark","");
+	dealServiceAddressMap.put("city",dealServiceCity);
+	dealServiceAddressMap.put("state",deal.get("Service_State"));
+	dealServiceAddressMap.put("country","");
+	dealServiceAddressMap.put("zip_code",deal.get("Service_Zip"));
+}
+// info "hasDealBillingAddress";
+// info hasDealBillingAddress;
+// info "hasDealServiceAddress";
+// info hasDealServiceAddress;
+if(hasDealBillingAddress && hasDealServiceAddress)
+{
+	dealBillingAddress = dealBillingAddressMap;
+	dealServiceAddress = dealServiceAddressMap;
+}
+else if(!hasDealBillingAddress && !hasDealServiceAddress)
+{
+	dealBillingAddress = customerServiceAddress;
+	dealServiceAddress = customerBillingAddress;
+}
+else if(!hasDealBillingAddress)
+{
+	dealBillingAddress = dealServiceAddressMap;
+	dealServiceAddress = dealServiceAddressMap;
+}
+else
+{
+	dealBillingAddress = dealBillingAddressMap;
+	dealServiceAddress = dealBillingAddressMap;
+}
+if(zuperJobId != null)
+{
+	jobMap.put("job_uid",zuperJobId);
+	jobParamsMap.put("job_uid",zuperJobId);
+	jobMap.put("customer_billing_address",dealBillingAddress);
+	jobMap.put("customer_address",dealServiceAddress);
+}
+else
+{
+	custM = Map();
+	custM.put("customer_billing_address",dealBillingAddress);
+	custM.put("customer_address",dealServiceAddress);
+	jobMap.put("customer",custM);
+}
+jobParamsMap.put("job",jobMap);
+info jobParamsMap;
+resp = invokeUrl(URL + "/jobs/",httpMethod,jobParamsMap.toString(),headersMap);
+jobUid = resp.get("job_uid");
+//UPDATE CUSTOM FIELD IN CASE OF ADD RECORD
+if(httpMethod == "POST" && jobUid != NULL)
+{
+	mp = Map();
+	mp.put(JOB_ID_FIELD,jobUid);
+	update = zoho.crm.updateRecord("Deals",dealId,mp);
+	info update;
+}
+info resp;

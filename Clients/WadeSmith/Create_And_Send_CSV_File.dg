@@ -1,0 +1,82 @@
+DealID = 4501430000004480231;
+Deal = zoho.crm.getRecordById("Deals",DealID);
+DealName = Deal.get("Deal_Name");
+//info Deal;
+urlParams = Map();
+urlParams.put("method","workbook.create");
+urlParams.put("workbook_name",DealName);
+create_spreadsheet = invokeurl
+[
+	url :"https://sheet.zoho.com/api/v2/create"
+	type :POST
+	parameters:urlParams
+	connection:"sheet"
+];
+info create_spreadsheet;
+//Headers
+dataArray = List();
+dataArray.add("Deal_Name");
+sheet_id = create_spreadsheet.get("resource_id");
+headerData = Map();
+headerData.put("method","row.content.set");
+headerData.put("worksheet_name","Sheet1");
+headerData.put("row",1);
+headerData.put("column_array",{1});
+headerData.put("data_array",dataArray);
+set_headers = invokeurl
+[
+	url :"https://sheet.zoho.com/api/v2/" + sheet_id
+	type :POST
+	parameters:headerData
+	connection:"sheet"
+];
+info set_headers;
+//Data
+dataArray = List();
+dataArray.add(DealName);
+rowData = Map();
+rowData.put("method","row.content.set");
+rowData.put("worksheet_name","Sheet1");
+rowData.put("row",2);
+rowData.put("column_array",{1});
+rowData.put("data_array",dataArray);
+set_data = invokeurl
+[
+	url :"https://sheet.zoho.com/api/v2/" + sheet_id
+	type :POST
+	parameters:rowData
+	connection:"sheet"
+];
+info set_data;
+csvData = Map();
+csvData.put("method","workbook.download");
+csvData.put("format","csv");
+csv_download = invokeurl
+[
+	url :"https://sheet.zoho.com/api/v2/download/" + sheet_id
+	type :GET
+	parameters:csvData
+	connection:"sheet"
+];
+info csv_download;
+Contact = zoho.crm.getRecordById("Contacts",Deal.get("Contact_Name").get("id"));
+csv_file = csv_download.toFile(DealName + ".csv");
+//Contact.get("Email")
+sendmail
+[
+	from :zoho.loginuserid
+	to :"arturo.ortega@amazingbusinessresults.com"
+	subject :"CSV File"
+	message :"Find the attached CSV file in this email"
+	content type :HTML
+	Attachments :file:csv_file
+]
+//info mail_sent;
+erase_file = invokeurl
+[
+	url :"https://writer.zoho.com/api/v1/documents/" + sheet_id + "/trash"
+	type :DELETE
+	connection:"docs"
+];
+info erase_file;
+return "";

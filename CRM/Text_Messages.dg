@@ -1,0 +1,126 @@
+// ALEX LOPEZ
+/*
+ShipYourCarNow
+Order# ${Order.Order}
+
+Total Units # ${Order.Total_Number_of_Vehicles} - ${Order.Vehicle_1_Make}
+${Order.Origin_City}, ${Order.Origin_State} to ${Order.Destination_City}, ${Order.Destination_State}
+
+Was this vehicle delivered ? 
+
+PLEASE REPLY - Via Text or Phone Show Less
+*/
+
+
+
+point = zoho.crm.getRecordById("Follow_Up_Dates",FUID);
+//info point;
+TemplateID = point.get("SMS_Template").get("id");
+OOrder = point.get("Order").get("id");
+Tpoint = zoho.crm.getRecordById("SMS_Templates",TemplateID.toLong());
+//info Tpoint;
+sms_template_text = Tpoint.get("Template");
+info sms_template_text;
+Opoint = zoho.crm.getRecordById("Deals",OOrder.toLong());
+info Opoint;
+MMobile = ifnull(Opoint.get("Driver_s_Cell"),"4072181055");
+text = "";
+array_list = sms_template_text.toList("}");
+for each  array_value in array_list
+{
+	if(array_value.contains("${Order."))
+	{
+		count = 1;
+		value = array_value.toList("${Order.");
+		for each  value_text in value
+		{
+			if(value.size() == count)
+			{
+				text = text + ifnull(Opoint.get(value_text),"");
+			}
+			else
+			{
+				text = text + value_text;
+			}
+			count = count + 1;
+		}
+	}
+	else
+	{
+		text = text + array_value;
+	}
+}
+info text;
+NName = "Follow Up SMS sent on " + zoho.currenttime.toString();
+mp = Map();
+mp.put("Name",NName);
+mp.put("FU_SMS_Message",text);
+UpdateSMS = zoho.crm.updateRecord("Follow_Up_Dates",FUID,mp,{"trigger":{"workflow","blueprint","approval"}});
+info UpdateSMS;
+ttp = Map();
+ttp.put("Mobile",MMobile);
+ttp.put("Body",text);
+UURL = "https://hooks.zapier.com/hooks/catch/5182519/ohp54b3/";
+PP = postUrl(UURL,ttp);
+info PP;
+
+
+// CURTIS
+// CURTIS
+// CURTIS
+// CURTIS
+// CURTIS
+// CURTIS
+// CURTIS
+// CURTIS
+// CURTIS
+// CURTIS
+// CURTIS
+// CURTIS
+// CURTIS
+// CURTIS
+// CURTIS
+// CURTIS
+
+//ContactID = 2792812000008603708;
+Contact = zoho.crm.getRecordById("Contacts",ContactID);
+number = Contact.get("Mobile");
+sms_template_text = Contact.get("Message_To_Send");
+text = "";
+array_list = sms_template_text.toList("}");
+for each  array_value in array_list
+{
+	if(array_value.contains("${Contacts."))
+	{
+		count = 1;
+		value = array_value.toList("${Contacts.");
+		for each  value_text in value
+		{
+			if(value.size() == count)
+			{
+				text = text + ifnull(Contact.get(value_text),"");
+			}
+			else
+			{
+				text = text + value_text;
+			}
+			count = count + 1;
+		}
+	}
+	else
+	{
+		text = text + array_value;
+	}
+}
+info text;
+headermap = Map();
+headermap.put("Content-Type","application/json");
+headermap.put("Authorization","eb8a16d9b544077777207385e5db712d9bf5f533:12cbafef273fe94d3019ba439bbd4021d0bf3f26");
+update = invokeurl
+[
+	url :"https://api.justcall.io/v1/texts/new"
+	type :POST
+	parameters:"{\"from\": \"+17207024200\",\n    \"to\": \"+" + number + "\",\n    \"body\": \"" + text + "\"\n}"
+	headers:headermap
+];
+info update;

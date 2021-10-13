@@ -1,0 +1,14 @@
+/// Service my Home, Relate a product to a new lead
+lead = zoho.crm.getRecordById("Leads", Lead_Id);
+services = lead.get("Our_Services");
+for each service in services
+{
+	related_service = zoho.crm.searchRecords("Products", "(Product_Name:equals:"+service+")");
+	m = Map();
+	m.put("$se_module","Leads");
+	m.put("Parent_Id",Lead_Id);
+	id = related_service.get(0).get("id");
+	
+	response = zoho.crm.updateRelatedRecord("Products", id, "Leads", Lead_Id, m);
+	info response;
+}

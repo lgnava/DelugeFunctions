@@ -1,0 +1,7 @@
+sendmail
+	[
+		from :zoho.loginuserid
+		to :OtherServicingAdvisorEmail
+		subject :"Missed Call from " + Contact.get("First_Name") + " " + Contact.get("Last_Name")
+		message :"Hi, <br> Please note we have received a missed call from " + Contact.get("First_Name") + " " + Contact.get("Last_Name") + ":<br> To get more information please click the following link: <br> <a href='https://crm.zoho.com/crm/org660194894/tab/Contacts/" + ContactId + "'>" + Contact.get("First_Name") + " " + Contact.get("Last_Name") + "</a>"
+	]

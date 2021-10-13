@@ -1,0 +1,278 @@
+////// Zobot for Web development system
+
+/// Trigger handler or Welcome interface, you can modify, add or delete replies and options
+response = Map();
+response.put("action","reply");
+response.put("replies",{"Hello there LEADer! I am Amazing Bot from Amazing Business results!","How can I help you today?"});
+response.put("input",{"type":"select","options":{"Support","Sales","Book appointment","Register to a Course"}});
+return response;
+
+/// Message Handler here is where we are going to follow a path depending the customer choice of option
+response = Map();
+msg = message.get("text");
+if(msg.equalsIgnoreCase("Support"))
+{
+	response.put("action","reply");
+	response.put("replies",{"How can we assist you?"});
+	response.put("input",{"type":"select","options":{"Raise a ticket","Check my ticket status"}});
+	return response;
+}
+else if(msg.equalsIgnoreCase("Raise a ticket") || msg.equalsIgnoreCase("Check my ticket status"))
+{
+	// We build a collection to take all the info that we need from message handler to context handler
+	ticketDetails = Collection();
+	// Need support --> Raise a ticket
+	if(msg.equalsIgnoreCase("Raise a ticket"))
+	{
+		response.put("action","context");
+		response.put("context_id","createticket");
+		first_name = {"name":"first_name","replies":{"We will need few basic details of yours to raise a ticket","To start with, Your first name please ?"}};
+		last_name = {"name":"last_name","replies":{"Whats your Last Name ?"}};
+		email = {"name":"email","replies":{"Whats your Email ?"}};
+		issue = {"name":"issue","replies":{"Please tell us about your problem"}};
+
+		// We store the answers or info that the customer gave us
+		ticketDetails.insert(first_name);
+		ticketDetails.insert(last_name);
+		ticketDetails.insert(email);
+		ticketDetails.insert(issue);
+	}
+	// Need support --> check ticket status
+	else if(msg.equalsIgnoreCase("Check my ticket status"))
+	{
+		response.put("action","context");
+		response.put("context_id","checkticket");
+		id = {"name":"id","replies":{"What's the Ticket Id please ?"}};
+		// We store the answers or info that the customer gave us
+		ticketDetails.insert(id);
+	}
+	//Then we save the collection to use it later on Context handler as 'answers'
+	response.put("questions",ticketDetails);
+	return response;
+}
+else if(msg.equalsIgnoreCase("Sales"))
+{
+	response.put("action","reply");
+	response.put("replies",{"How can we assist you?"});
+	response.put("input",{"type":"select","options":{"Book a Sales Appointment","Buy a Course","Talk with an Agent"}});
+}
+// Sales --> Book a Sales appointment
+else if(msg.equalsIgnoreCase("Book a Sales Appointment"))
+{
+	// We build a collection to take all the info that we need from message handler to context handler
+	salesAppointmentDetails = Collection();
+	response.put("action","context");
+	response.put("context_id","salesappointment");
+	name = {"name":"name","replies":{"We will need few basic details of yours to Book a Sales appointment","To start with, Your Name please ?"}};
+	email = {"name":"email","replies":{"Whats your Email ?"}};
+	phoneNumber = {"name":"phoneNumber","replies":{"Whats your phone number ?"}};
+	day = {"name":"calendar_entry","replies":{"Select a date"},"input":{"type":"calendar"}};
+	// We store the answers or info that the customer gave us
+	salesAppointmentDetails.insert(name);
+	salesAppointmentDetails.insert(email);
+	salesAppointmentDetails.insert(phoneNumber);
+	salesAppointmentDetails.insert(day);
+	//Then we save the collection to use it later on Context handler as 'answers'
+	response.put("questions",salesAppointmentDetails);
+}
+// Sales --> Buy a Course
+else if(msg.equalsIgnoreCase("Buy a Course"))
+{
+	response.put("action","context");
+	response.put("context_id","buy_course");
+	// We present the link using () and insert it in the words between []
+	question = {"name":"buy_course","replies":{"Here you can [Buy a Course](https://www.liorizik.com)"}};
+	response.put("questions",{question});
+}
+// Sales --> Talk to an Agent
+else if(msg.equalsIgnoreCase("Talk with an Agent"))
+{
+	// Action to forward the client or customer to any available agent
+	response = {"action":"forward","replies":{"Connecting you with an available Agent","Please wait"}};
+}
+else if(msg.equalsIgnoreCase("Book appointment"))
+{
+	// We build a collection to take all the info that we need from message handler to context handler
+	appointmentDetails = Collection();
+	response.put("action","context");
+	response.put("context_id","appointment");
+	name = {"name":"name","replies":{"We will need few basic details of yours to Book an appointment","To start with, Your Name please ?"}};
+	email = {"name":"email","replies":{"Whats your Email ?"}};
+	phoneNumber = {"name":"phoneNumber","replies":{"Whats your phone number ?"}};
+	day = {"name":"calendar_entry","replies":{"Select a date"},"input":{"type":"calendar"}};
+	// We store the answers or info that the customer gave us
+	appointmentDetails.insert(name);
+	appointmentDetails.insert(email);
+	appointmentDetails.insert(phoneNumber);
+	appointmentDetails.insert(day);
+	//Then we save the collection to use it later on Context handler as 'answers'
+	response.put("questions",appointmentDetails);
+}
+else if(msg.equalsIgnoreCase("Register to a Course"))
+{
+	response.put("action","context");
+	response.put("context_id","register");
+	// We present the link using () and insert it in the words between []
+	question = {"name":"appointment","replies":{"Here you can [Register to a Course](https://www.amazingbusinessresults.com/zoho-crm-course/)"}};
+	response.put("questions",{question});
+}
+else
+{
+	// In any case that the client try or is able to do something that is not contemplated 
+	response = Map();
+	response.put("action","reply");
+	response.put("replies",{"Hello there LEADer! I am Amazing Bot from Amazing Business results!","How can I help you today?"});
+	response.put("suggestions",{"Support","Sales","Book appointment","Register to a Course"});
+	return response;
+}
+return response;
+
+//// Context Handler where all the info gathered will be used for an output or final result
+/// Organization ID and the department ID from Zoho Desk for creating and fetching tickets
+organizationID = 707444422; 
+departmentId = 476945000000006907;
+/// Service Id (Consultation) in which we want an appointment and Staff Id (Consultant)in charge of the service
+appointment_serviceID = 4072432000000024954;
+appointment_staffID = 4072432000000024910;
+/// There is one for the Book appointment, and other one for the Sales-->Book a Sales appointment
+sales_appointment_serviceID = 4072432000000024954;
+sales_appointment_staffID = 4072432000000024910;
+// This is the timezone that you defined of your business, you can find it on General-->Basic Information-->Define Your Business
+timeZone = "America/Mexico_City";
+
+response = Map();
+response.put("action","context");
+response.put("context_id",context_id);
+/// This are the options that after interacting on message handler dont need anymore attention/action so will finish the chat for them
+if(context_id.equals("register") || context_id.equals("book_sa") || context_id.equals("buy_course"))
+{
+	response.put("action","end");
+	response.put("replies",{"Please restart the chat for more help","See you next time!"});
+}
+else if(context_id.equals("createticket"))
+{
+	response.put("action","context");
+	// Here we get all the answers that we kept in the connection
+	first_name = answers.get("first_name").get("text");
+	last_name = answers.get("last_name").get("text");
+	email = answers.get("email").get("text");
+	issue = answers.get("issue").get("text");
+	//To create a Ticket, we need to first create the contact in Zoho Desk
+	createContactRes = zoho.desk.create(organizationID,"contacts",{"lastName":last_name,"firstName":first_name,"email":email});
+	contactId = createContactRes.get("id");
+	//We create now the ticket using the organization Id, the contact Id we just created and the department Id
+	ticketInfo = zoho.desk.create(organizationID,"tickets",{"subject":"Customer Issue-" + first_name + " " + last_name,"departmentId":departmentId,"contactId":contactId,"description":issue,"email":email});
+	response.put("action","end");
+	response.put("replies",{"Your Ticket with Id " + ticketInfo.get("id") + " has been created SUCESSFULLY and our team will reach you shortly!","Please restart the chat for more help","See you next time!"});
+}
+
+else if(context_id.equals("checkticket"))
+{
+	response.put("action","context");
+	// Here we get all the answers that we kept in the connection
+	id = answers.get("id").get("text");
+	record = zoho.desk.getRecordById(organizationID,"tickets",id);
+	// If theres no info of a ticket with the chosen ID
+	if(!record.get("errorCode").isNull())
+	{
+		response.put("action","end");
+		response.put("replies",{"That Ticket Id doesn't exist","Please restart the chat for more help","See you next time!"});
+	}
+	//If theres a existing ticket with the chosen ID
+	else
+	{
+		response.put("action","end");
+		response.put("replies",{"The Ticket with Id #" + id,"Has the Status of: " + record.get("statusType")});
+	}
+}
+else if(context_id.equals("appointment"))
+{
+	// Here we get all the answers that we kept in the connection
+	date = answers.get("calendar_entry").get("text");
+	name = answers.get("name").get("text");
+	email = answers.get("email").get("text");
+	phoneNumber = answers.get("phoneNumber").get("text");
+	// We build the map info for making the appointment
+	customerDetails = Map();
+	customerDetails.put("name",name);
+	customerDetails.put("email",email);
+	customerDetails.put("phone_number",phoneNumber);
+	// We build here and present the available slots for the desired date
+	if(!answers.containsKey("booking_hour"))
+	{
+		parameters = Map();
+		parameters.put("service_id",appointment_serviceID);
+		parameters.put("staff_id",appointment_staffID);
+		parameters.put("selected_date",date);
+		dateResponse = invokeurl
+		[
+			url :"https://www.zohoapis.com/bookings/v1/json/availableslots"
+			type :POST
+			parameters:parameters
+			connection:"bookings"
+		];
+		available_slots = dateResponse.get("response").get("returnvalue").get("data");
+		// In case there are no available slots for that date, we finish the chat and ask the client to try with another date
+		if(available_slots.isEmpty()){
+			
+			response.put("action","end");
+			response.put("replies",{"We are sorry but there are no available Appointments for the "+date,"Please restart the chat and try with a different day","Sorry for the inconvenience :("});
+		}
+		//In case there is availability, it will show the available slots or spots
+		question = {"name":"booking_hour","replies":{"These are the available slots for " + date + " please select one."},"suggestions":available_slots};
+		response.put("questions",{question});
+	}
+	//After making the appointment on Zoho Bookings the client will receive a confirmation here with Day and Time
+	else
+	{
+		book_appointment = zoho.bookings.createAppointment(appointment_serviceID,date + " " + answers.get("booking_hour").get("text") + ":00",customerDetails,appointment_staffID,timeZone,true,"bookings");
+		response.put("action","end");
+		response.put("replies",{"Your Appointment on " + date + " at " + answers.get("booking_hour").get("text") + " has been booked SUCCESSFULLY","You will receive a confirmation email very soon","See you there buddy!"});
+	}
+}
+else if(context_id.equals("salesappointment"))
+{
+	// Here we get all the answers that we kept in the connection
+	date = answers.get("calendar_entry").get("text");
+	name = answers.get("name").get("text");
+	email = answers.get("email").get("text");
+	phoneNumber = answers.get("phoneNumber").get("text");
+	// We build the map info for making the appointment
+	customerDetails = Map();
+	customerDetails.put("name",name);
+	customerDetails.put("email",email);
+	customerDetails.put("phone_number",phoneNumber);
+	// We build here and present the available slots for the desired date
+	if(!answers.containsKey("booking_hour"))
+	{
+		parameters = Map();
+		parameters.put("service_id",sales_appointment_serviceID);
+		parameters.put("staff_id",sales_appointment_staffID);
+		parameters.put("selected_date",date);
+		dateResponse = invokeurl
+		[
+			url :"https://www.zohoapis.com/bookings/v1/json/availableslots"
+			type :POST
+			parameters:parameters
+			connection:"bookings"
+		];
+		available_slots = dateResponse.get("response").get("returnvalue").get("data");
+		// In case there are no available slots for that date, we finish the chat and ask the client to try with another date
+		if(available_slots.isEmpty()){
+			
+			response.put("action","end");
+			response.put("replies",{"We are sorry but there are no available Appointments for the "+date,"Please restart the chat and try with a different day","Sorry for the inconvenience :("});
+		}
+		//In case there is availability, it will show the available slots or spots
+		question = {"name":"booking_hour","replies":{"These are the available slots for " + date + " please select one."},"suggestions":available_slots};
+		response.put("questions",{question});
+	}
+	//After making the appointment on Zoho Bookings the client will receive a confirmation here with Day and Time
+	else
+	{
+		book_appointment = zoho.bookings.createAppointment(sales_appointment_serviceID,date + " " + answers.get("booking_hour").get("text") + ":00",customerDetails,sales_appointment_staffID,timeZone,true,"bookings");
+		response.put("action","end");
+		response.put("replies",{"Your Sales Appointment on " + date + " at " + answers.get("booking_hour").get("text") + " has been booked SUCCESSFULLY","You will receive a confirmation email very soon","See you there buddy!"});
+	}
+}
+return response;

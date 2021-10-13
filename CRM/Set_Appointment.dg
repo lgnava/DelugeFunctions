@@ -1,0 +1,34 @@
+/* 
+Función para tomar los campos de meeting y crear un evento. En caso de querer invitar al Lead, manda un mensaje de correo electrónico
+*/
+
+Lead = zoho.crm.getRecordById("Leads",LeadID);
+FieldName = "Effective Date";
+eventtitle = Lead.get("Meeting_Subject");
+start_time = Lead.get("Meeting_Starting_Date_Time").toTime("yyyy-MM-dd'T'HH:mm:ss").toString("yyyy-MM-dd'T'HH:mm:ss");
+end_time = Lead.get("Meeting_Ending_Date_Time").toTime("yyyy-MM-dd'T'HH:mm:ss").toString("yyyy-MM-dd'T'HH:mm:ss");
+EventsMap = Map();
+EventsMap.put("Start_DateTime",start_time);
+EventsMap.put("What_Id",LeadID);
+EventsMap.put("$se_module","Leads");
+if(!Lead.get("Meeting_Agenda").isNull())
+{
+	EventsMap.put("Description",Lead.get("Meeting_Agenda"));
+}
+EventsMap.put("send_notification",true);
+EventsMap.put("Event_Title",eventtitle);
+EventsMap.put("End_DateTime",end_time);
+if(Lead.get("Send_invitation_to_the_Lead") == "Yes")
+{
+	partList = List();
+	partMap = Map();
+	partMap.put("type","lead");
+	partMap.put("participant",Lead.get("id"));
+	partList.add(partMap);
+	EventsMap.put("Participants",partList);
+}
+EventsMap.put("Owner",Lead.get("Owner").get("id"));
+EventsMap.put("Remind_At","5 mins");
+EventsMap.put("All_day",false);
+EventsCreate = zoho.crm.createRecord("Events",EventsMap);
+info EventsCreate;

@@ -1,0 +1,56 @@
+DealID = 3398362000016709047;
+Deal = zoho.crm.getRecordById("Deals",DealID);
+Contact = zoho.crm.getRecordById("Contacts",Deal.get("Contact_Name").get("id"));
+document_id = "dau7hb3b42eff14354fe49ea204f345a1ddca";
+// Solution Summary
+parentFolderId = "8ykz81b6cc088c66f404bb8227c09ffa79055";
+// Luises' work
+Today = zoho.currentdate;
+FolderName = Deal.get("Deal_Name") + " " + Today.toString("YYYY-MM-dd");
+subFolder = zoho.workdrive.createFolder(FolderName, parentFolderId,"crmwriter");
+fieldInfo = zoho.writer.getMergeFields(document_id,"crmwriter");
+fieldsList = fieldInfo.get("fields");
+for each field in fieldsList{
+	//info 'data.put("'+field+'", "S");';
+}
+data = Map();
+
+if(!Deal.get("Contact_Name").isNull()){ data.put("Contact_Name", Deal.get("Contact_Name")); }
+if(!Contact.get("Email").isNull()){ data.put("Contact_Name.Email", Contact.get("Email")); }
+if(!Contact.get("Mobile").isNull()){ data.put("Contact_Name.Mobile", Contact.get("Mobile")); }
+if(!Contact.get("Phone").isNull()){ data.put("Contact_Name.Phone", Contact.get("Phone")); }
+if(!Deal.get("Nationality").isNull()){ data.put("Nationality", Deal.get("Nationality")); }
+if(!Contact.get("Address_Line_1").isNull()){ data.put("Contact_Name.Address_Line_1", Contact.get("Address_Line_1")); }
+if(!Contact.get("City").isNull()){ data.put("Contact_Name.City", Contact.get("City")); }
+if(!Contact.get("Post_Code").isNull()){ data.put("Contact_Name.Post_Code", Contact.get("Post_Code")); }
+if(!Contact.get("Country").isNull()){ data.put("Contact_Name.Country", Contact.get("Country")); }
+if(!Deal.get("Start_Date").isNull()){ data.put("Start_Date", Deal.get("Start_Date")); }
+if(!Deal.get("End_date1").isNull()){ data.put("End_date1", Deal.get("End_date1")); }
+if(!Deal.get("Compliance_Rule_Process").isNull()){ data.put("Compliance_Rule_PSC", Deal.get("Compliance_Rule_Process")); }
+if(!Deal.get("Solution").isNull()){ data.put("Solution", Deal.get("Solution")); }
+if(!Deal.get("Internal_Company").isNull()){ data.put("Internal_Company", Deal.get("Internal_Company")); }
+if(!Deal.get("Currency").isNull()){ data.put("Currency", Deal.get("Currency")); }
+if(!Deal.get("PII").isNull()){ data.put("PII", Deal.get("PII")); }
+if(!Deal.get("Where_Tax_Paid").isNull()){ data.put("Where_Tax_Paid", Deal.get("Where_Tax_Paid")); }
+if(!Deal.get("Where_S_S_Paid").isNull()){ data.put("Where_S_S_Paid", Deal.get("Where_S_S_Paid")); }
+if(!Deal.get("Management_Fee").isNull()){ data.put("Management_Fee", Deal.get("Management_Fee")); }
+if(!Deal.get("Account_Name").isNull()){ data.put("Account_Name", Deal.get("Account_Name")); }
+if(!Contact.get("Agency_Contact_Full_Name").isNull()){ data.put("Contact_Name.Agency_Contact_Full_Name", Contact.get("Agency_Contact_Full_Name")); }
+if(!Contact.get("Agency_Contact_E_mail").isNull()){ data.put("Contact_Name.Agency_Contact_E_mail", Contact.get("Agency_Contact_E_mail")); }
+if(!Deal.get("Sales_Shared_By").isNull()){ data.put("Sales_Shared_By", Deal.get("Sales_Shared_By")); }
+if(!Deal.get("Sales_Commission_Split").isNull()){ data.put("Sales_Commission_Split", Deal.get("Sales_Commission_Split")); }
+if(!Deal.get("Internal_Company_Name").isNull()){ data.put("Internal_Company_Name", Deal.get("Internal_Company_Name")); }
+if(!Deal.get("Agency_Rate").isNull()){ data.put("Agency_Rate", Deal.get("Agency_Rate")); }
+if(!Deal.get("Client_Rate").isNull()){ data.put("Client_Rate", Deal.get("Client_Rate")); }
+if(!Deal.get("Owner").isNull()){ data.put("Owner", Deal.get("Owner")); }
+if(!Deal.get("Closing_Date").isNull()){ data.put("Closing_Date", Deal.get("Closing_Date")); }
+if(!Contact.get("Description").isNull()){ data.put("Contact_Name.Description", Contact.get("Description")); }
+
+info data;
+
+output_settings = Map();
+output_settings.put("doc_name", "Solution Summary");
+output_settings.put("folder_id",subFolder.get("data").get("id"));
+//output_settings.put("output_format","pdf");
+info zoho.writer.mergeAndStore(document_id,data,output_settings,"crmwriter");
+return "hi";

@@ -1,0 +1,22 @@
+//ContactID = 4217250000003975013;
+Contact = zoho.crm.getRecordById("Contacts",ContactID);
+info Contact;
+if(!Contact.get("Mailing_Street").isNull())
+{
+	Today = zoho.currentdate;
+	DealName = Contact.get("Mailing_Street") + " " + Today.toString("YYMMdd");
+	info DealName;
+	DealMap = Map();
+	DealMap.put("Deal_Name",DealName);
+	DealMap.put("Contact_Name",Contact);
+	if(!Contact.get("Account_Name").isNull())
+	{
+		DealMap.put("Account_Name",Contact.get("Account_Name"));
+	}
+	DealMap.put("Closing_Date",Today.addDay(7));
+	DealMap.put("Follow_Up_Date",Today);
+	DealMap.put("Stage","Qualified");
+	DealCreate = zoho.crm.createRecord("Deals",DealMap);
+	//return DealName + " Created";
+}
+return "Missing data from Contact";

@@ -1,0 +1,22 @@
+//textID = 4639099000002920024;
+text = zoho.crm.getRecordById("twiliosmsextension0__Sent_SMS",textID);
+if(!text.get("LeadName").isNull())
+{
+	image = text.get("twiliosmsextension0__MMS_content").replaceAll("<img src='",'').replaceAll("' />",'');
+	lead = zoho.crm.getRecordById("Leads",text.get("LeadName").get("id"));
+	file_variable = invokeurl
+	[
+		url :image
+		type :GET
+	];
+	response = zoho.workdrive.uploadFile(file_variable,lead.get("Internal_WorkDrive_Folder_ID"),file_variable,false,"writernworkdrive");
+	ownerEmail = lead.get("Owner").get("email");
+	MessageX = lead.get("First_Name") + " " + lead.get("Last_Name") + " has upload a new file to WD, here is the lead's record https://crm.zoho.com/crm/org724487052/tab/Leads/" + lead.get("id");
+	info zoho.cliq.postToUser(ownerEmail,MessageX,"cliq");
+	info zoho.cliq.postToUser("christian@pathtoown.org","This is a copy of the message sent to the lead owner -> " + MessageX,"cliq");
+}
+
+
+// Twilio
+// MMS
+// FileGetContents

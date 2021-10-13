@@ -1,0 +1,95 @@
+document_id = "kw8eq9d599bf1b57847609442ae509afbd7a7";					
+res = zoho.writer.getMergeFields(document_id, "crmwriter");					
+info res;					
+email = "liorizik@gmail.com";					
+					
+output_format = "inline";					
+m = map();					
+m.put("Salutation","hgfhf");					
+m.put("Salutation1","hgfhf");					
+m.put("Last_Name","hgfhf");					
+m.put("House_Name_Number","hgfhf");					
+m.put("postcodelookup1__Street","hgfhf");					
+m.put("postcodelookup1__City","hgfhf");					
+m.put("postcodelookup1__Postal_Code","hgfhf");					
+m.put("Salutation","hgfhf");					
+m.put("Salutation1","hgfhf");					
+m.put("Last_Name","hgfhf");					
+m.put("House_Name_Number","hgfhf");					
+m.put("postcodelookup1__Street","hgfhf");					
+m.put("postcodelookup1__City","hgfhf");					
+m.put("postcodelookup1__Postal_Code","hgfhf");					
+m.put("Strategy","hgfhf");					
+m.put("Our_Recommended_price","hgfhf");					
+m.put("Fee","hgfhf");					
+m.put("Special_agreements","hgfhf");					
+m.put("Owner","hgfhf");					
+rl_fields = map();					
+rl_fields.put("merge_data",{"data":m});					
+rl_fields.put("subject","sfdsfdsf");					
+rl_fields.put("message","sfdsfdsf");					
+res = zoho.writer.mergeAndSend(document_id, output_format, email, rl_fields, "crmwriter");					
+info res;
+
+
+
+
+
+
+
+/*Version 2*/
+
+// DealID = 4346125000002091251;
+Loan = zoho.crm.getRecordById("Deals",DealID);
+Contact = zoho.crm.getRecordById("Contacts", Loan.get("Contact_Name").get("id"));
+document_id = "kw8eq9d599bf1b57847609442ae509afbd7a7";					
+res = zoho.writer.getMergeFields(document_id, "crmwriter");					
+info res;					
+
+
+email = Contact.get("Email");					
+					
+output_format = "inline";					
+m = map();				
+if(!Loan.get("Now").isNull()){
+	m.put("Now",Loan.get("Now").toString("dd MMM, yyyy"));
+}
+
+if(!Loan.get("Deal_Name").isNull()){
+	m.put("Deal_Name",Loan.get("Deal_Name"));
+}
+
+if(!Loan.get("Property_Type").isNull()){
+	m.put("Property_Type",Loan.get("Property_Type"));
+}
+
+if(!Loan.get("Occupancy").isNull()){
+	m.put("Occupancy",Loan.get("Occupancy"));
+}
+
+if(!Loan.get("Sales_Price").isNull()){
+	m.put("Sales_Price",Loan.get("Sales_Price"));
+}
+
+if(!Loan.get("LTV").isNull()){
+	m.put("LTV",Loan.get("LTV"));
+}
+
+if(!Loan.get("Loan_Amount").isNull()){
+	m.put("Loan_Amount",Loan.get("Loan_Amount"));
+}
+
+if(!Loan.get("Loan_Type").isNull()){
+	m.put("Loan_Type",Loan.get("Loan_Type"));
+}
+
+if(!Loan.get("Owner").isNull()){
+	m.put("Owner",Loan.get("Owner"));
+}
+									
+rl_fields = map();					
+rl_fields.put("merge_data",{"data":m});					
+rl_fields.put("subject","Pre Approval Document");					
+rl_fields.put("message","Dear " + Contact.get("First_Name") + "<br><br>Attached please find your pre approval document");					
+res = zoho.writer.mergeAndSend(document_id, output_format, email, rl_fields, "crmwriter");					
+info res;

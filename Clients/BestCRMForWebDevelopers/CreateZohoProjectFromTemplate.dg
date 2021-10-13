@@ -1,0 +1,23 @@
+//CreateZohoProjectFromTemplate(Int DealID)
+
+//DealID = 4368666000001414011;
+Deal = zoho.crm.getRecordById("Deals",DealID);
+PortalName = zoho.projects.getPortals().get("portals").get(0).get("id");
+templates = Map();
+templates.put("Web Development",1548991000000407077);
+templates.put("Hosting",1548991000000407005);
+templates.put("Online Marketing",1548991000000407107);
+products = zoho.crm.getRelatedRecords("Products","Deals",DealID);
+for each  product in products
+{
+	product_category = product.get("Product_Category");
+	if(templates.get(product.get("Product_Category")).isNull())
+	{
+		continue;
+	}
+	params = Map();
+	params.put("name",product.get("Product_Category") + " - " + Deal.get("Deal_Name"));
+	params.put("template_id",templates.get(product_category));
+	params.put("description","Test Project description");
+	response = zoho.projects.createProject(PortalName,params);
+}

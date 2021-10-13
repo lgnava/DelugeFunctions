@@ -1,0 +1,34 @@
+//DealID = 3901090000001203002;
+Deal = zoho.crm.getRecordById("Deals",DealID);
+attach_list = invokeurl
+[
+	url :"https://www.zohoapis.com/crm/v2/Deals/" + DealID + "/Attachments"
+	type :GET
+	connection:"crmwriter"
+];
+for each  attach in attach_list.get("data")
+{
+	file_name = Deal.get("Deal_Name") + ".pdf";
+	if(attach.get("File_Name") == file_name)
+	{
+		download_attach = invokeurl
+		[
+			url :"https://www.zohoapis.com/crm/v2/Deals/" + DealID + "/Attachments/" + attach.get("id")
+			type :GET
+			connection:"crmwriter"
+		];
+		info download_attach;
+		MyFile = download_attach;
+	}
+}
+info MyFile;
+mapa = Map();
+signDocument = zoho.sign.createDocument(MyFile,mapa,"sign");
+info signDocument;
+document_id = signDocument.get("requests").get("document_ids").get(0).get("document_id");
+request_id = signDocument.get("requests").get("request_id");
+deal_map = Map();
+deal_map.put("Document_ID",document_id);
+deal_map.put("Request_ID",request_id);
+response_deal = zoho.crm.updateRecord("Deals",DealID,deal_map);
+info response_deal;

@@ -1,0 +1,101 @@
+//lead_id = 4905723000000336417;
+// --------------- GET LEAD -------------------
+lead = zoho.crm.getRecordById("Leads",lead_id);
+// --------------- SEND EMAIL -----------------
+// si debe mandar template
+// arma el correo "from" basado en la division
+// evalua si es correo principal con el loged in user y si no arma el de organización
+// envía el correo
+template_answer = lead.get("Select_Template_To_Send");
+lead_division = lead.get("Division");
+if(template_answer != "Do Not Send Any")
+{
+	user_email = zoho.loginuserid;
+	user_name = zoho.loginuser;
+	user_arr = user_email.toList("@");
+	user_prefix = user_arr.get(0);
+	if(lead_division == "GEOSCAN SUBSURFACE SURVEYS" || lead_division == "GEOSCAN LAND SURVEYING"){
+		suffix = "@geoscan.ca";
+	}
+	if(lead_division == "XRADAR BC" || lead_division == "XRADAR CANADA"){
+		suffix = "@xradar.ca";
+	}
+	if(lead_division == "VUIT"){
+		suffix = "@vuit.ca";
+	}
+	
+	sender_email = user_prefix + suffix;
+	m = Map();
+	m.put("Division_Email_Sender", sender_email);
+	info zoho.crm.updateRecord("Leads", lead_id, m);
+	
+	using_organization_email = false;
+	if(sender_email != user_email){
+		using_organization_email = true;
+	}
+	// ---- searches template
+	response_email_templates = invokeurl
+	[
+	url :"https://www.zohoapis.com/crm/v2.1/settings/email_templates"
+	type :GET
+	connection:"crm_oauth_connection"
+	];
+	info response_email_templates;
+	for each template in response_email_templates.get("email_templates")
+	{
+		if(template.get("name") == template_answer){
+			template_id = template.get("id");
+		}
+	}
+	
+	// ------- The actual sending -------------
+	to_map = Map();
+	to_map.put("user_name",lead.get("First_name"));
+	to_map.put("email",lead.get("Email"));
+	to_list = List();
+	to_list.add(to_map);
+	from_map = Map();
+	from_map.put("user_name",user_name);
+	from_map.put("email",sender_email);
+	email_map = Map();
+	email_map.put("to",to_list);
+	email_map.put("from",from_map);
+	email_map.put("org_email",using_organization_email);
+	email_map_template = Map();
+	email_map_template.put("id",template_id);
+	email_map.put("template",email_map_template);
+	email_list = List();
+	email_list.add(email_map);
+	data_map = Map();
+	data_map.put("data",email_list);
+
+	response_email = invokeurl
+	[
+	url :"https://www.zohoapis.com/crm/v2.1/Leads/"+lead_id+"/actions/send_mail"
+	type :POST
+	parameters:data_map.toString()
+	connection:"crm_oauth_connection"
+	];
+	info response_email;
+}
+
+// --------------- COUNT ATTEMPTS -------------
+attempt_number = lead.get("Followup_Attempts");
+new_attempt_number = ifNull(attempt_number,0) + 1;
+lead_map = Map();
+lead_map.put("Followup_Attempts",new_attempt_number);
+lead_response = zoho.crm.updateRecord("Leads",lead_id,lead_map);
+info lead_response;
+// in case the 3rd attempt is reached
+if(new_attempt_number == 3)
+{
+	m = Map();
+	m.put("Followup_Date",zoho.currentdate.addMonth(2));
+	info zoho.crm.updateRecord("Leads",lead_id,m);
+}
+else
+{
+	m = Map();
+	m.put("Followup_Date",zoho.currentdate.addBusinessDay(3));
+	info zoho.crm.updateRecord("Leads",lead_id,m);
+}

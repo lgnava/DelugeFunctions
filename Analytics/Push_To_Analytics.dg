@@ -1,0 +1,23 @@
+getleadrecord = zoho.crm.getRecordById("Leads",leadid);
+getemail = ifnull(getleadrecord.get("Email"),"");
+getlead_status = ifnull(getleadrecord.get("Lead_Status"),"");
+modified_time = ifnull(getleadrecord.get("Modified_Time"),"").toDate();
+last_laststatus_datetime = ifnull(getleadrecord.get("Last_Leadstatus_Datetime"),"");
+// modified_time = modified_time.toTime("yyyy-MM-dd'T'HH:mm:ss","GMT+" + modified_time.getsuffix("+"));
+fieldTextData = Map();
+fieldTextData.put("Leadid",leadid);
+fieldTextData.put("Email",getemail);
+fieldTextData.put("Lead_Status",getlead_status);
+fieldTextData.put("Datetime of last_updated_datetime",modified_time);
+if(last_laststatus_datetime != 0)
+{
+	days = last_laststatus_datetime.daysBetween(modified_time);
+}
+else
+{
+	days = 0;
+}
+info days;
+fieldTextData.put("Days",days);
+response = zoho.reports.createRow("Zoho CRM Reports","lead_task_worksheet",fieldTextData);
+updatelead = zoho.crm.updateRecord("Leads",leadid,{"Last_Leadstatus_Datetime":modified_time});

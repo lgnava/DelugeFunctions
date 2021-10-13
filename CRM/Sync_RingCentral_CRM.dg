@@ -1,0 +1,24 @@
+// Damian, Wade
+// It can ask for 10 records per minute or RingCentral will block the rest of the requests
+Contacts = zoho.crm.getRecords("Contacts",0,10,{"cvid":2992506000021188074});
+m = Map();
+m.put("Push_To_Ringcentral","Push To RS");
+for each  contact in Contacts
+{
+	urlParams = Map();
+	urlParams.put("FirstName",contact.get("First_Name"));
+	urlParams.put("Phone",contact.get("Phone"));
+	urlParams.put("LastName",contact.get("Last_Name"));
+	urlParams.put("Mobile",contact.get("Mobile"));
+	urlParams.put("email",contact.get("Email"));
+	create_contact = invokeurl
+	[
+		url :"https://flow.zoho.com/664173024/flow/webhook/incoming?zapikey=1001.27ba94e29a28f35b9bca76cedee9a467.07ccaf645c2995b300cd4643533caa44&isdebug=false"
+		type :POST
+		parameters:urlParams
+	];
+	info create_contact;
+	m = Map();
+	m.put("Push_To_Ringcentral","Pushed");
+	info zoho.crm.updateRecord("Contacts",contact.get("id"),m);
+}

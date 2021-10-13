@@ -1,0 +1,178 @@
+/*REQUIREMENT :
+> Whenever a Contact record is created in CRM, create a folder for the particular Contact in a Team
+folder within Workdrive and upload all the attachments from the particular Contact record into the
+newly created Folder. Finally, update the complete url of the Workdrive Folder in a custom URL field
+in the Contact record and delete the attachments from the attachments related list in CRM.
+
+THINGS TO BE CREATED :
+> Create two Connections (Setup -> Developer Space -> Connections) in CRM. One is with Workdrive
+scopes and another one is with CRM scopes (modules.all, attachments)
+
+workdrive_oauth_connection y crm
+
+> Create a Team Folder in Workdrive and name it as Zoho CRM or desired name and copy the Team
+ID found in the URL
+> Create a custom URL field in Contacts module. This code is implemented for Contacts module
+but can be used for all the other modules as well
+SAMPLE WORKDRIVE TEAM FOLDER URL :
+https://workdrive.zoho.com/home/teams/ROOTID/ws/TEAMID/folders/files
+SCRIPT :
+*/
+
+
+/* Getting a particular Contact details */
+getCont = zoho.crm.getRecordById("Contacts",contId);
+/* Check if the wdURL field (custom URL field) in Contacts module is empty, if is null assign empty
+space to the field - to prevent null exception */
+wdurl = ifnull(getCont.get("wdURL")," ");
+/* Hard coding workdrive TEAM ID*/
+teamid = "49yu62cfb72519ea54187940de550068f0553";
+/* Frame the name of the folder using the desired field values. Here I have used the First Name and
+Last Name*/
+fullname = getCont.get("First_Name") + " " + getCont.get("Last_Name");
+/* Below is to check if the record is newly created. If the custom url field is empty then the record is
+newly created so it has to create a Folder and upload the attachments. If it is an existing record
+then it will simply uploads the attachment to the folder - folder id will be retrieved from the url field
+*/
+if(wdurl.isEmpty())
+{
+param = {"data":{"attributes":{"name":fullname,"parent_id":teamid},"type":"files"}};
+// Replace zworkdrive with the connection name you have created with workdrive scopes
+createFolder = invokeurl
+[
+url :"https://workdrive.zoho.com/api/v1/files"
+type :POST
+parameters:param.toString()
+headers:{"Accept":"application/vnd.api+json"}
+connection:"zworkdrive"
+];
+info createFolder;
+newFolderId = createFolder.get("data").get("id");
+info zoho.crm.updateRecord("Contacts",contId,{"wdURL":"
+https://workdrive.zoho.com/home/teams/g5mip38bda74c73df447eab690b69c3dc5e19/ws/" +
+teamid + "/folders/" + newFolderId});
+
+
+
+
+
+
+
+
+
+
+
+getAtt = zoho.crm.getRelatedRecords("Attachments","Contacts",contId);
+for each att in getAtt
+{
+// Replace zcrm with the connection name you have created with CRM scopes
+downAtt = invokeurl
+[
+url :"https://www.zohoapis.com/crm/v2/Contacts/" + contId + "/Attachments/"
++ att.get("id")
+type :GET
+connection:"zcrm"
+];
+info downAtt;
+fileName = now + att.get("File_Name");
+fileName = att.get("File_Name");
+uploadToWd = invokeurl
+[
+url :"https://workdrive.zoho.com/api/v1/upload?filename=" + att.get("File_Name") +
+"&parent_id=" + newFolderId
+type :POST
+connection:"zworkdrive"
+files:downAtt
+];
+info uploadToWd;
+if(uploadToWd.notContains("error"))
+{
+deleteAtt = invokeurl
+[
+url :"https://www.zohoapis.com/crm/v2/Contacts/" + contId +
+"/Attachments/" + att.get("id")
+type :DELETE
+connection:"zcrm"
+];
+info deleteAtt;
+}
+}
+}
+else
+{
+wdfolderId = wdurl.toString().getSuffix("folders/");
+getAtt = zoho.crm.getRelatedRecords("Attachments","Contacts",contId);
+for each  att in getAtt
+{
+downAtt = invokeurl
+[
+url :"https://www.zohoapis.com/crm/v2/Contacts/" + contId + "/Attachments/"
++ att.get("id")
+type :GET
+connection:"zcrm"
+];
+fileName = att.get("File_Name");
+uploadToWd = invokeurl
+[
+url :"https://workdrive.zoho.com/api/v1/upload?filename=" + fileName +
+"&parent_id=" + wdfolderId
+type :POST
+files:downAtt
+connection:"zworkdrive"
+];
+if(uploadToWd.notContains("error"))
+{
+deleteAtt = invokeurl
+[
+url :"https://www.zohoapis.com/crm/v2/Contacts/" + contId +
+"/Attachments/" + att.get("id")
+type :DELETE
+connection:"zcrm"
+];
+info deleteAtt;
+}
+}
+}
+
+//ExportAttachmentsToDrive
+
+
+
+
+
+
+
+
+////OpportunityID = 4481243000003089411;
+Opportunity = zoho.crm.getRecordById("Deals",OpportunityID);
+info Opportunity;
+AttachmentsVar = zoho.crm.getRelatedRecords("Attachments","Deals",OpportunityID);
+info AttachmentsVar;
+for each  att in AttachmentsVar
+{
+	OpportunityID = Opportunity.get("id");
+	downAtt = invokeurl
+	[
+		url :"https://www.zohoapis.com/crm/v2/Deals/" + OpportunityID + "/Attachments/" + att.get("id")
+		type :GET
+		connection:"crm"
+	];
+	info downAtt;
+	Today = zoho.currenttime;
+	fileName = Today.toString("HH:mm:ss_") + att.get("File_Name");
+	uploadToWd = invokeurl
+	[
+		url :"https://workdrive.zoho.com/api/v1/upload?filename=" + fileName + "&parent_id=" + Opportunity.get("Work_Drive_Documents_ID")
+		type :POST
+		files:downAtt
+		connection:"workdrive_oauth_connection"
+	];
+	info uploadToWd;
+	deleteAtt = invokeurl
+	[
+		url :"https://www.zohoapis.com/crm/v2/Deals/" + OpportunityID + "/Attachments/" + att.get("id")
+		type :DELETE
+		connection:"crm"
+	];
+	info deleteAtt;
+}

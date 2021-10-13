@@ -1,0 +1,82 @@
+//QuoteID = 4392530000002348001;
+errMsg = "";
+Quote = zoho.crm.getRecordById("Quotes",QuoteID);
+//info Quote;
+/*
+** Validates data before creating sheet
+*/
+if(Quote.get("Contact_Name") == null)
+{
+	return "A Contact must be linked to this Quote";
+}
+/*
+** Generates a sheet from the Quote Template
+*/
+templateID = "cd8vm1b38f2ce46cd420b828b91a19e0f3dbc";
+generate_sheet_map = Map();
+generate_sheet_map.put("method","workbook.createfromtemplate");
+generate_sheet_map.put("resource_id",templateID);
+generate_sheet_map.put("workbook_name","Quote: " + Quote.get("Quote_Name"));
+generate_sheet_from_template = invokeurl
+[
+	url :"https://sheet.zoho.com/api/v2/createfromtemplate"
+	type :POST
+	parameters:generate_sheet_map
+	connection:"sheets"
+];
+new_sheet_id = generate_sheet_from_template.get("resource_id");
+if(generate_sheet_from_template.get("error_message") != null)
+{
+	if(generate_sheet_from_template.get("error_message") == "The workbook does not exists")
+	{
+		return "The quote template cannot be found.";
+	}
+	return "Something happened. Try again later or contact your administrator.";
+}
+info generate_sheet_from_template;
+/*
+** Get data to fill the sheet
+*/
+quote_date = Quote.get("Created_Time").toString("MM-dd-yyyy");
+info quote_date;
+quote_name = Quote.get("Quote_Name");
+quote_contact_name = Quote.get("Contact_Name").get("name");
+/*
+** Replacing standalone values that are between "??"
+*/
+replace_quote_date = zoho.sheet.replace(new_sheet_id,"workbook","?DATE?",quote_date);
+replace_quote_number = zoho.sheet.replace(new_sheet_id,"workbook","?quote_number?",quote_name);
+replace_quote_contact_name = zoho.sheet.replace(new_sheet_id,"workbook","?quote_contact_name?",quote_contact_name);
+/*
+** Preparing data for product details table
+*/
+product_details = Quote.get("Product_Details");
+product_list = List();
+total = 0;
+for each  product in product_details
+{
+	product_row = Map();
+	product_row.put("Model / Part Number",product.get("product").get("name"));
+	product_row.put("Type","");
+	product_row.put("Qty",product.get("quantity"));
+	product_row.put("Description",IF(product.get("product_description") == null,"",product.get("product_description")));
+	product_row.put("Price Each","$" + product.get("unit_price"));
+	product_row.put("Total","$" + product.get("net_total"));
+	total = total + product.get("net_total");
+	product_list.add(product_row);
+}
+last_row_index_params = Map();
+last_row_index_params.put("method","worksheet.usedarea");
+last_row_index_params.put("worksheet_name","Sheet1");
+get_last_row_index = invokeurl
+[
+	url :"https://sheet.zoho.com/api/v2/" + templateID
+	type :GET
+	parameters:last_row_index_params
+	connection:"sheets"
+];
+add_products_to_sheet = zoho.sheet.createRecords(new_sheet_id,"Sheet1",product_list,{"header_row":get_last_row_index.get("used_row_index")});
+//Replace ?total? with total amount
+replace_total = zoho.sheet.replace(new_sheet_id,"workbook","?total?","$" + total);
+openUrl("https://sheet.zoho.com/sheet/open/" + new_sheet_id + "/sheets/Sheet1","new window");
+return "Sheet Created Successfully";

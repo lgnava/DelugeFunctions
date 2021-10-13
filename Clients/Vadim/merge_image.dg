@@ -1,0 +1,12 @@
+/*Hello Luis, 
+
+Greetings from Partner Team! 
+
+Sorry for the inadvertent delay in getting back to you, So.. I was able to find a solution for your requirement and the below are the steps. 
+
+1. Create a URL or a single line field inside CRM , that will hold a URL of a  downloadable file from Zoho Workdrive. 
+2. Creating a pre-downladable file, in Workdrive open a image >> click on the dropdown icon in Share >> click on create download link >> give a name and click on Create. Once the link is generated copy it and at the end of the link add this tag >>  ?directDownload=true 
+3. Update this link in the URL field in CRM. 
+4. Open Mail merge template >> click on the Gear Icon on option 3 (Manage Fields) It will open a small window > where you can change the type of the field. change the URL field type to Image and save the settings once.. Now if you add the merge tag inside the template it will show as a Image Icon. 
+5. finally save the template. 
+6. Now on mail merge the image sill be updated automatically.*/

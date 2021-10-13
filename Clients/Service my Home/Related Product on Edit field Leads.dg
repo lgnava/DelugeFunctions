@@ -1,0 +1,33 @@
+//Related Products on Edit field Leads for Service My Home
+
+all_services = zoho.crm.getRecords("Products");
+id_list = "";
+count = 0;
+for each  single_service in all_services
+{
+	id_list = id_list + single_service.get("id");
+	if(count < all_services.size() - 1)
+	{
+		id_list = id_list + ",";
+	}
+}
+del_response = invokeurl
+[
+	url :"https://www.zohoapis.com/crm/v2/Leads/" + Lead_Id + "/Products?ids=" + id_list
+	type :DELETE
+	connection:"crm"
+];
+
+// Create New Lead Related product
+lead = zoho.crm.getRecordById("Leads",Lead_Id);
+services = lead.get("Our_Services");
+for each  service in services
+{
+	related_service = zoho.crm.searchRecords("Products","(Product_Name:equals:" + service + ")");
+	m = Map();
+	m.put("$se_module","Leads");
+	m.put("Parent_Id",Lead_Id);
+	id = related_service.get(0).get("id");
+	response = zoho.crm.updateRelatedRecord("Products",id,"Leads",Lead_Id,m);
+}
+info response;

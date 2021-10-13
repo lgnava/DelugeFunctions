@@ -1,0 +1,125 @@
+// BRIANs
+
+//DealID = 4458234000004312045;
+Deal = zoho.crm.getRecordById("Deals",DealID);
+info Deal;
+Account = zoho.crm.getRecordById("Accounts",Deal.get("Account_Name").get("id"));
+//info Account;
+Products = zoho.crm.getRecords("Products");
+//info Products.get(5);
+m = Map();
+Product_Details = List();
+detail = Map();
+internalProductData = Map();
+if(!Deal.get("Deal_Classification").isNull())
+{
+	if(Deal.get("Deal_Classification") == "Need to Update")
+	{
+		internalProductData.put("id",Products.get(0).get("id"));
+		detail.put("product",internalProductData);
+		detail.put("quantity",99);
+		Product_Details.add(detail);
+		internalProductData.put("id",Products.get(1).get("id"));
+		detail.put("product",internalProductData);
+		detail.put("quantity",99);
+		Product_Details.add(detail);
+		LayoutId = 4458234000001866305;
+	}
+	if(Deal.get("Deal_Classification") == "Telecom – Hosted")
+	{
+		internalProductData.put("id",Products.get(2).get("id"));
+		detail.put("product",internalProductData);
+		detail.put("quantity",99);
+		Product_Details.add(detail);
+		internalProductData.put("id",Products.get(3).get("id"));
+		detail.put("product",internalProductData);
+		detail.put("quantity",99);
+		Product_Details.add(detail);
+		LayoutId = 4458234000001866305;
+	}
+	if(Deal.get("Deal_Classification") == "Telecom – Premise")
+	{
+		internalProductData.put("id",Products.get(4).get("id"));
+		detail.put("product",internalProductData);
+		detail.put("quantity",99);
+		Product_Details.add(detail);
+		internalProductData.put("id",Products.get(5).get("id"));
+		detail.put("product",internalProductData);
+		detail.put("quantity",99);
+		Product_Details.add(detail);
+		LayoutId = 4458234000001866305;
+	}
+	if(Deal.get("Deal_Classification") == "Carrier – Shaw")
+	{
+		internalProductData.put("id",Products.get(6).get("id"));
+		detail.put("product",internalProductData);
+		detail.put("quantity",99);
+		Product_Details.add(detail);
+		internalProductData.put("id",Products.get(7).get("id"));
+		detail.put("product",internalProductData);
+		detail.put("quantity",99);
+		Product_Details.add(detail);
+		LayoutId = 4458234000000091017;
+	}
+	if(Deal.get("Deal_Classification") == "Carrier – Telus")
+	{
+		internalProductData.put("id",Products.get(8).get("id"));
+		detail.put("product",internalProductData);
+		detail.put("quantity",99);
+		Product_Details.add(detail);
+		internalProductData.put("id",Products.get(9).get("id"));
+		detail.put("product",internalProductData);
+		detail.put("quantity",99);
+		Product_Details.add(detail);
+		LayoutId = 4458234000000091017;
+	}
+	if(Deal.get("Deal_Classification") == "MAC")
+	{
+		internalProductData.put("id",Products.get(10).get("id"));
+		detail.put("product",internalProductData);
+		detail.put("quantity",99);
+		Product_Details.add(detail);
+		internalProductData.put("id",Products.get(11).get("id"));
+		detail.put("product",internalProductData);
+		detail.put("quantity",99);
+		Product_Details.add(detail);
+		LayoutId = 4458234000000091017;
+	}
+	if(Deal.get("Deal_Classification") == "Surveillance")
+	{
+		internalProductData.put("id",Products.get(12).get("id"));
+		detail.put("product",internalProductData);
+		detail.put("quantity",99);
+		Product_Details.add(detail);
+		internalProductData.put("id",Products.get(13).get("id"));
+		detail.put("product",internalProductData);
+		detail.put("quantity",99);
+		Product_Details.add(detail);
+		LayoutId = 4458234000000091017;
+	}
+}
+/***/
+m.put("Billing_City",Account.get("Billing_City"));
+m.put("Billing_Code",Account.get("Billing_Code"));
+m.put("Billing_Country",Account.get("Billing_Country"));
+m.put("Billing_State",Account.get("Billing_State"));
+m.put("Billing_Street",Account.get("Billing_Street"));
+/***/
+m.put("Shipping_City",Account.get("Shipping_City"));
+m.put("Shipping_Code",Account.get("Shipping_Code"));
+m.put("Shipping_Country",Account.get("Shipping_Country"));
+m.put("Shipping_State",Account.get("Shipping_State"));
+m.put("Shipping_Street",Account.get("Shipping_Street"));
+/***/
+m.put("Deal_Name",Deal.get("id"));
+m.put("Account_Name",Account.get("id"));
+m.put("Contact_Name",Deal.get("Contact_Name").get("id"));
+m.put("Owner",Deal.get("owner"));
+m.put("Subject",Deal.get("Deal_Name"));
+m.put("Hosted_Quote_Type","Mitel");
+m.put("Carrier","UPS");
+m.put("Layout",LayoutId);
+/***/
+m.put("Product_Details",Product_Details);
+info zoho.crm.createRecord("Quotes",m);
+return "";

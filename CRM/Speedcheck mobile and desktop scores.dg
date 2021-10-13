@@ -1,0 +1,238 @@
+//Speedcheck mobile and desktop scores web development
+lead = zoho.crm.getRecordById("Leads",Lead_id);
+web_asked = lead.get("Website");
+api_key = "AIzaSyA1FaDQ3fKeg7BtFk5Ufn_-MFokOnq1dR4";
+api_location = "https://www.googleapis.com/pagespeedonline/v5/runPagespeed?";
+response = invokeurl
+[
+	url :api_location + "url=" + web_asked + "&key=" + api_key
+	type :GET
+];
+fcp = response.get("lighthouseResult").get("audits").get("metrics").get("details").get("items").get(0).get("firstContentfulPaint");
+si = response.get("lighthouseResult").get("audits").get("metrics").get("details").get("items").get(0).get("speedIndex");
+lcp = response.get("lighthouseResult").get("audits").get("metrics").get("details").get("items").get(0).get("largestContentfulPaint");
+tti = response.get("lighthouseResult").get("audits").get("metrics").get("details").get("items").get(0).get("interactive");
+tbt = response.get("lighthouseResult").get("audits").get("metrics").get("details").get("items").get(0).get("totalBlockingTime");
+cls = response.get("lighthouseResult").get("audits").get("metrics").get("details").get("items").get(0).get("cumulativeLayoutShift");
+if(fcp > 4000)
+{
+	fcp = 4000;
+}
+if(fcp < 1000)
+{
+	fcp = 1000;
+}
+fcp_score = 0.000000000000000001 * fcp.power(6) - 0.00000000000001 * fcp.power(5) + 0.00000000006 * fcp.power(4) - 0.0000001 * fcp.power(3) + 0.00003 * fcp.power(2) + 0.0044 * fcp + 99.728;
+if(si > 5000)
+{
+	si = 5000;
+}
+if(si < 1000)
+{
+	si = 1000;
+}
+si_score = 0.0000000000000000002 * si.power(6) - 0.000000000000003 * si.power(5) + 0.00000000002 * si.power(4) - 0.00000005 * si.power(3) + 0.00003 * si.power(2) - 0.0029 * si + 99.885;
+if(lcp > 6000)
+{
+	lcp = 6000;
+}
+if(lcp < 0)
+{
+	lcp = 0;
+}
+lcp_score = 0.00000000000000000003 * lcp.power(6) - 0.0000000000000004 * lcp.power(5) + 0.000000000002 * lcp.power(4) + 0.000000002 * lcp.power(3) - 0.00003 * lcp.power(2) + 0.0182 * lcp + 99.554;
+if(tti > 10000)
+{
+	tti = 10000;
+}
+if(tti < 1000)
+{
+	tti = 1000;
+}
+tti_score = 0.000000000000000000001 * tti.power(6) - 0.00000000000000003 * tti.power(5) + 0.0000000000002 * tti.power(4) + 0.0000000007 * tti.power(3) - 0.00001 * tti.power(2) + 0.0307 * tti + 81.862;
+if(tbt < 820)
+{
+	tbt_score = -0.0000000000000002 * tbt.power(6) + 0.000000000001 * tbt.power(5) - 0.000000002 * tbt.power(4) + 0.000003 * tbt.power(3) - 0.0011 * tbt.power(2) + 0.0277 * tbt + 103.07;
+}
+else if(tbt >= 820)
+{
+	tbt = 820;
+	tbt_score = 0.00000000002 * tbt.power(4) - 0.0000001 * tbt.power(3) + 0.0003 * tbt.power(2) - 0.3208 * tbt + 128.8;
+}
+if(cls > 0.82)
+{
+	cls = 0.82;
+}
+if(cls < 0)
+{
+	cls = 0;
+}
+cls_score = -6404 * cls.power(6) + 18953 * cls.power(5) - 22181 * cls.power(4) + 12734 * cls.power(3) - 3383.4 * cls.power(2) + 130.69 * cls + 99.642;
+if(fcp_score < 1)
+{
+	fcp_score = 1;
+}
+if(fcp_score > 100)
+{
+	fcp_score = 100;
+}
+if(si_score < 0)
+{
+	si_score = 0;
+}
+if(si_score > 100)
+{
+	si_score = 100;
+}
+if(lcp_score < 5)
+{
+	lcp_score = 5;
+}
+if(lcp_score > 100)
+{
+	lcp_score = 100;
+}
+if(tti_score < 4)
+{
+	tti_score = 4;
+}
+if(tti_score > 100)
+{
+	tti_score = 100;
+}
+if(tbt_score < 0)
+{
+	tbt_score = 0;
+}
+if(tbt_score > 100)
+{
+	tbt_score = 100;
+}
+if(cls_score < 5)
+{
+	cls_score = 5;
+}
+if(cls_score > 100)
+{
+	cls_score = 100;
+}
+desktop_score = fcp_score * 0.15 + si_score * 0.15 + lcp_score * 0.25 + tti_score * 0.15 + tbt_score * 0.25 + cls_score * 0.05;
+mob_response = invokeurl
+[
+	url :api_location + "strategy=MOBILE&url=" + web_asked + "&key=" + api_key
+	type :GET
+];
+m_fcp = mob_response.get("lighthouseResult").get("audits").get("metrics").get("details").get("items").get(0).get("firstContentfulPaint");
+m_si = mob_response.get("lighthouseResult").get("audits").get("metrics").get("details").get("items").get(0).get("speedIndex");
+m_lcp = mob_response.get("lighthouseResult").get("audits").get("metrics").get("details").get("items").get(0).get("largestContentfulPaint");
+m_tti = mob_response.get("lighthouseResult").get("audits").get("metrics").get("details").get("items").get(0).get("interactive");
+m_tbt = mob_response.get("lighthouseResult").get("audits").get("metrics").get("details").get("items").get(0).get("totalBlockingTime");
+m_cls = mob_response.get("lighthouseResult").get("audits").get("metrics").get("details").get("items").get(0).get("cumulativeLayoutShift");
+if(m_fcp > 8000)
+{
+	m_fcp = 8000;
+}
+if(m_fcp < 1000)
+{
+	m_fcp = 1000;
+}
+m_fcp_score = 0.00000000000000000001 * m_fcp.power(6) - 0.0000000000000003 * m_fcp.power(5) + 0.000000000003 * m_fcp.power(4) - 0.00000001 * m_fcp.power(3) + 0.00001 * m_fcp.power(2) + 0.0032 * m_fcp + 92.948;
+if(m_si > 12000)
+{
+	m_si = 12000;
+}
+if(m_si < 1000)
+{
+	m_si = 1000;
+}
+m_si_score = 0.000000000000000000001 * m_si.power(6) - 0.00000000000000004 * m_si.power(5) + 0.0000000000006 * m_si.power(4) - 0.000000004 * m_si.power(3) + 0.000007 * m_si.power(2) - 0.0022 * m_si + 98.103;
+if(m_lcp > 8000)
+{
+	m_lcp = 8000;
+}
+if(m_lcp < 1000)
+{
+	m_lcp = 1000;
+}
+m_lcp_score = 0.00000000000000000002 * m_lcp.power(6) - 0.0000000000000005 * m_lcp.power(5) + 0.000000000005 * m_lcp.power(4) - 0.00000002 * m_lcp.power(3) + 0.00005 * m_lcp.power(2) - 0.039 * m_lcp + 110.34;
+if(m_tti > 17000)
+{
+	m_tti = 17000;
+}
+if(m_tti < 1000)
+{
+	m_tti = 1000;
+}
+m_tti_score = 0.0000000000000000005 * m_tti.power(5) - 0.00000000000003 * m_tti.power(4) + 0.0000000007 * m_tti.power(3) - 0.000007 * m_tti.power(2) + 0.0181 * m_tti + 87.761;
+if(m_tbt < 820)
+{
+	m_tbt_score = -0.0000000000000002 * m_tbt.power(6) + 0.000000000001 * m_tbt.power(5) - 0.000000002 * m_tbt.power(4) + 0.000003 * m_tbt.power(3) - 0.0011 * m_tbt.power(2) + 0.0277 * m_tbt + 103.07;
+}
+else if(m_tbt >= 820)
+{
+	m_tbt = 820;
+	m_tbt_score = 0.00000000002 * tbt.power(4) - 0.0000001 * tbt.power(3) + 0.0003 * tbt.power(2) - 0.3208 * tbt + 128.8;
+}
+if(m_cls > 0.82)
+{
+	m_cls = 0.82;
+}
+if(m_cls < 0)
+{
+	m_cls = 0;
+}
+m_cls_score = -6404 * m_cls.power(6) + 18953 * m_cls.power(5) - 22181 * m_cls.power(4) + 12734 * m_cls.power(3) - 3383.4 * m_cls.power(2) + 130.69 * m_cls + 99.642;
+if(m_fcp_score < 5)
+{
+	m_fcp_score = 5;
+}
+if(m_fcp_score > 100)
+{
+	m_fcp_score = 100;
+}
+if(m_si_score < 4)
+{
+	m_si_score = 4;
+}
+if(m_si_score > 100)
+{
+	m_si_score = 100;
+}
+if(m_lcp_score < 3)
+{
+	m_lcp_score = 3;
+}
+if(m_lcp_score > 100)
+{
+	m_lcp_score = 100;
+}
+if(m_tti_score < 5)
+{
+	m_tti_score = 5;
+}
+if(m_tti_score > 100)
+{
+	m_tti_score = 100;
+}
+if(m_tbt_score < 2)
+{
+	m_tbt_score = 2;
+}
+if(m_tbt_score > 100)
+{
+	m_tbt_score = 100;
+}
+if(m_cls_score < 5)
+{
+	m_cls_score = 5;
+}
+if(m_cls_score > 100)
+{
+	m_cls_score = 100;
+}
+desktop_score = fcp_score * 0.15 + si_score * 0.15 + lcp_score * 0.25 + tti_score * 0.15 + tbt_score * 0.25 + cls_score * 0.05;
+mobile_score = m_fcp_score * 0.15 + m_si_score * 0.15 + m_lcp_score * 0.25 + m_tti_score * 0.15 + m_tbt_score * 0.25 + m_cls_score * 0.05;
+m = Map();
+m.put("Mobile_Score",mobile_score.ceil());
+m.put("Desktop_Score",desktop_score.ceil());
+upd_record = zoho.crm.updateRecord("Leads",Lead_id,m);

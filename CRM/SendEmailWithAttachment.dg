@@ -1,0 +1,24 @@
+//Example of function that downloads a file and sends it over email
+csvData = Map();
+csvData.put("method","workbook.download");
+csvData.put("format","csv");
+csv_download = invokeurl
+[
+	url :"https://sheet.zoho.com/api/v2/download/" + sheet_id
+	type :GET
+	parameters:csvData
+	connection:"sheet"
+];
+info csv_download;
+Contact = zoho.crm.getRecordById("Contacts",Deal.get("Contact_Name").get("id"));
+csv_file = csv_download.toFile(DealName + ".csv");
+//Contact.get("Email")
+sendmail
+[
+	from :zoho.loginuserid
+	to :"arturo.ortega@amazingbusinessresults.com"
+	subject :"CSV File"
+	message :"Find the attached CSV file in this email"
+	content type :HTML
+	Attachments :file:csv_file
+]

@@ -1,0 +1,97 @@
+// Last Contact is a Date
+// Update Last Contact with Email Outgoing - Incoming
+// ABR Last Contact Task
+// Update Last Contact with Call Date Call Creation
+// Update Last Contact To Meeting Date on Creation
+// Update Last Contact with Due Date Task Creation
+// Update Last Contact with Incoming Call
+// Update Last Contact with Outgoing Call
+// Notes para hugo
+
+//Email 
+Contact = zoho.crm.getRecordById("Contacts",ContactID);//4291778000001223055
+Deals = zoho.crm.getRelatedRecords("Deals","Contacts",ContactID);
+info Deals;
+for each  Deal in Deals
+{
+m = Map();
+m.put("Last_Contact",zoho.currentdate);
+res = zoho.crm.updateRecord("Deals",Deal.get("id"),m);
+info res;
+}
+
+
+//Tasks 
+Task = zoho.crm.getRecordById("Tasks", TaskID);
+DealID = Task.get("What_Id").get("id");
+m = Map();
+m.put("Last_Contact",Task.get("Due_Date"));
+res = zoho.crm.updateRecord("Deals",DealID,m);
+info res;
+
+
+
+//Calls Incoming and outgoing and scheduled 
+Call = zoho.crm.getRecordById("Calls", CallID); //4291778000001446251
+DealID = Call.get("What_Id").get("id");
+m = Map();
+CallTime = Call.get("Call_Start_Time").toTime("yyyy-MM-dd'T'HH:mm:ss").toString("yyyy-MM-dd");
+m.put("Last_Contact",CallTime);
+res = zoho.crm.updateRecord("Deals",DealID,m);
+info res;
+
+
+
+//Meeting 
+Meeting = zoho.crm.getRecordById("Events", MeetingID); //4291778000001446276
+DealID = Meeting.get("What_Id").get("id");
+m = Map();
+MeetingTime = Meeting.get("End_DateTime").toTime("yyyy-MM-dd'T'HH:mm:ss").toString("yyyy-MM-dd");
+m.put("Last_Contact",MeetingTime);
+res = zoho.crm.updateRecord("Deals",DealID,m);
+info res;
+
+
+// If it is applied to Contacts, try to after 10 mins chage it to Deals
+
+
+// ABR Last Contact Email Out
+// this is on one of our products 
+
+// Por notas
+//---------------  Get notes By Created Time --------------
+parameters_map = Map();
+parameters_map.put("sort_order","desc");
+parameters_map.put("sort_by","Modified_Time");
+parameters_map.put("per_page",200);
+response_notes = invokeurl
+[
+url :"https://www.zohoapis.com/crm/v2/Notes"
+type :GET
+parameters:parameters_map
+connection:"crm_oauth_connection"
+];
+for each  note in response_notes.get("data")
+{
+module = note.get("$se_module");
+module_id = note.get("Parent_Id").get("id");
+modified_time = note.get("Modified_Time");
+info module;
+info module_id;
+record = zoho.crm.getRecordById(module,module_id);
+last_activity_DT = record.get("Last_Activity_Date_Time");
+if(last_activity_DT.isNull())
+{
+record_map = Map();
+record_map.put("Last_Activity_Date_Time",modified_time);
+response_record = zoho.crm.updateRecord(module,module_id,record_map);
+info response_record;
+}
+else if(modified_time.toTime("yyyy-MM-dd'T'HH:mm:ss") > last_activity_DT.toTime("yyyy-MM-dd'T'HH:mm:ss"))
+{
+record_map = Map();
+record_map.put("Last_Activity_Date_Time",modified_time);
+response_record = zoho.crm.updateRecord(module,module_id,record_map);
+info response_record;
+}
+}

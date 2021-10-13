@@ -1,0 +1,79 @@
+// Add Followup for a New Lead
+    // Follow time is Empty
+        // Followup for today
+
+
+// Add Followup Comments to The Notes
+    // Followup Coments isn't empty
+    // Followup Comments
+    Lead = zoho.crm.getRecordById("Leads",LeadID);
+    notesMap = {"Parent_Id":LeadID,"Note_Title":"Followup Note","Note_Content":Lead.get("Followup_Comments"),"$se_module":"Leads"};
+    notesResponse = zoho.crm.createRecord("Notes",notesMap);
+    info notesResponse;
+
+// Reset Leads Followup
+    // Reset Followup is selected
+    // Followup for Today
+    // Followup Reset not selected
+    // Clear Comments
+    //LeadID = 1958499000003640001;
+    Lead = zoho.crm.getRecordById("Leads",LeadID);
+    info zoho.crm.updateRecord("Leads",LeadID,{"Followup_Comments":""});
+
+
+
+// Set Followup On No Action
+    // Lead Status
+    // Field Update for Today
+    // SetFollowupCommentsForNoAction
+    Lead = zoho.crm.getRecordById("Leads",LeadID);
+    Name = Lead.get("Full_Name");
+    Comment = Name + " was not contacted in 7 days. Please connect with the contact";
+    notesMap = {"Parent_Id":LeadID,"Note_Title":"No Action Alert","Note_Content":Comment,"$se_module":"Leads"};
+    notesResponse = zoho.crm.createRecord("Notes",notesMap);
+    info notesResponse;
+    m = Map();
+    m.put("Notes",Comment);
+    res = zoho.crm.updateRecord("Leads",LeadID,m);
+
+
+
+toString("HH")
+
+
+// Appointment
+    // Crear Los Campos en la sección Meetings
+    LeadID = 1958499000003576684;
+    Lead = zoho.crm.getRecordById("Leads",LeadID);
+    meeting_subject = Lead.get("Meeting_Subject");
+    meeting_start_time = Lead.get("Meeting_Starting_DateTime").toTime("yyyy-MM-dd'T'HH:mm:ss").toString("yyyy-MM-dd'T'HH:mm:ss");
+    meeting_end_time = Lead.get("Meeting_Ending_DateTime").toTime("yyyy-MM-dd'T'HH:mm:ss").toString("yyyy-MM-dd'T'HH:mm:ss");
+    meeting_agenda = Lead.get("Meeting_Schedule");
+    EventsMap = Map();
+    EventsMap.put("Start_DateTime",meeting_start_time);
+    EventsMap.put("What_Id",LeadID);
+    EventsMap.put("$se_module","Leads");
+    if(!Lead.get("Meeting_Schedule").isNull())
+    {
+        EventsMap.put("Description",Lead.get("Meeting_Schedule"));
+    }
+    EventsMap.put("send_notification",true);
+    EventsMap.put("Event_Title",meeting_subject);
+    EventsMap.put("End_DateTime",meeting_end_time);
+    if(Lead.get("Would_you_like_to_invite_the_Lead_to_the_Meeting") == "Yes")
+    {
+        partList = List();
+        partMap = Map();
+        partMap.put("type","lead");
+        partMap.put("participant",LeadID);
+        partList.add(partMap);
+        EventsMap.put("Participants",partList);
+    }
+    EventsMap.put("Owner",Lead.get("Owner").get("id"));
+    EventsMap.put("Remind_At","5 mins");
+    EventsMap.put("All_day",false);
+    info EventsMap;
+    EventsCreate = zoho.crm.createRecord("Events",EventsMap);
+    info EventsCreate;
+
+

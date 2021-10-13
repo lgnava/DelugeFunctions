@@ -1,0 +1,144 @@
+#property copyright "Copyright 2021, MetaQuotes Ltd."
+#property link      "https://www.mql5.com"
+#property version   "1.00"
+#include <Trade/Trade.mqh>
+
+float diferenciaEnDias = 1;
+float diaCumple = 737830;
+float diaHoy = 0;
+float tamanoPosiciones = 0.01;
+CTrade trade;
+
+int OnInit()
+  {
+   return(0);
+  }
+
+void OnDeinit(const int reason)
+  {
+   Print("OnDeinit :D");
+  }
+
+void OnTick()
+  {
+   double Ask = NormalizeDouble(SymbolInfoDouble(_Symbol, SYMBOL_ASK), _Digits);
+   double Bid = NormalizeDouble(SymbolInfoDouble(_Symbol, SYMBOL_BID), _Digits);
+   // si no hay posiciones abiertas, ni órdenes abiertas, abre el stop buy y el stop sell
+   if(OrdersTotal() == 0 && PositionsTotal() == 0){
+      trade.BuyStop(tamanoDePosiciones(), Ask+1000, _Symbol, Bid-3000, Ask+10000, ORDER_TIME_DAY);
+      trade.SellStop(tamanoDePosiciones(), Bid-1000, _Symbol, Ask+3000, Bid-10000, ORDER_TIME_DAY);/**/
+   }
+   // si hay una órden y una posición, cierra la órden
+   if(OrdersTotal() == 1 && PositionsTotal() == 1){
+      trade.OrderDelete(OrderGetTicket(0));
+   }
+   // si hay cero órdenes y una posición 
+   if(OrdersTotal() == 0 && PositionsTotal() == 1){
+      ulong posTicket = PositionGetTicket(0);
+      if(PositionSelectByTicket(posTicket)){
+         double posSL = PositionGetDouble(POSITION_SL);
+         double posTP = PositionGetDouble(POSITION_TP);
+         if(PositionGetInteger(POSITION_TYPE)==1 && (PositionGetDouble(POSITION_PRICE_OPEN) - Ask > 999) ){
+            Print("Hay venta, debemos comprar");
+            trade.PositionModify(posTicket, posSL-200, posTP);
+            trade.Buy(tamanoDePosiciones(), _Symbol, 0.0, Bid-1000, Ask+1000);
+         }else if(PositionGetInteger(POSITION_TYPE)==0 && (Bid - PositionGetDouble(POSITION_PRICE_OPEN) > 999) ){
+            Print("Hay compra, debemos vender");
+            trade.PositionModify(posTicket, posSL+200, posTP);
+            trade.Sell(tamanoDePosiciones(), _Symbol, 0.0, Ask+1000, Bid-1000);
+         } 
+      }
+   }
+   
+   Print("I am on, lots are the size of " + (string)tamanoDePosiciones() + ", days to increase them = " + (diaCumple - diaHoy));
+  }
+  
+float tamanoDePosiciones(){
+   datetime tm=TimeCurrent();
+   MqlDateTime stm;
+   TimeToStruct(tm,stm);
+   diaHoy = stm.year*365 + stm.mon*12 + stm.day;
+   if(diaHoy - diaCumple < 1){
+      diferenciaEnDias = 1;
+   }else{
+      diferenciaEnDias = diaHoy - diaCumple;
+   }
+   tamanoPosiciones = diferenciaEnDias/100;
+   return tamanoPosiciones;
+}
+
+
+// NEW version
+#property copyright "Copyright 2021, MetaQuotes Ltd."
+#property link      "https://www.mql5.com"
+#property version   "1.00"
+#include <Trade/Trade.mqh>
+
+float diferenciaEnDias = 1;
+float diaCumple = 737830;
+float diaHoy = 0;
+float tamanoPosiciones = 0.01;
+CTrade trade;
+
+int OnInit()
+  {
+   return(0);
+  }
+
+void OnDeinit(const int reason)
+  {
+   Print("OnDeinit :D");
+  }
+
+void OnTick()
+  {
+   double Ask = NormalizeDouble(SymbolInfoDouble(_Symbol, SYMBOL_ASK), _Digits);
+   double Bid = NormalizeDouble(SymbolInfoDouble(_Symbol, SYMBOL_BID), _Digits);
+   // si no hay posiciones abiertas, ni órdenes abiertas, abre el stop buy y el stop sell
+   if(OrdersTotal() == 0 && PositionsTotal() == 0){
+      trade.BuyStop(tamanoDePosiciones(), Ask+1000, _Symbol, Bid-3000, Ask+10000, ORDER_TIME_DAY);
+      trade.SellStop(tamanoDePosiciones(), Bid-1000, _Symbol, Ask+3000, Bid-10000, ORDER_TIME_DAY);/**/
+   }
+   // si hay una órden y una posición, cierra la órden
+   if(OrdersTotal() == 1 && PositionsTotal() == 1){
+      trade.OrderDelete(OrderGetTicket(0));
+   }
+   // si hay cero órdenes y una posición 
+   if(OrdersTotal() == 0 && PositionsTotal() == 1){
+      ulong posTicket = PositionGetTicket(0);
+      if(PositionSelectByTicket(posTicket)){
+         //double posSL = PositionGetDouble(POSITION_SL);
+         //double posTP = PositionGetDouble(POSITION_TP);
+         if(PositionGetInteger(POSITION_TYPE)==1 && (PositionGetDouble(POSITION_PRICE_OPEN) - Ask > 999) ){
+            Print("Hay venta, debemos comprar");
+            //trade.PositionModify(posTicket, posSL-1200, posTP);
+            trade.Buy(tamanoDePosiciones(), _Symbol, 0.0, Bid-1000, Ask+500);
+         }else if(PositionGetInteger(POSITION_TYPE)==0 && (Bid - PositionGetDouble(POSITION_PRICE_OPEN) > 999) ){
+            Print("Hay compra, debemos vender");
+            //trade.PositionModify(posTicket, posSL+1200, posTP);
+            trade.Sell(tamanoDePosiciones(), _Symbol, 0.0, Ask+1000, Bid-500);
+         } 
+      }
+   }
+   
+   Print("I am on, lots are the size of " + (string)tamanoDePosiciones() + ", days to increase them = " + (diaCumple - diaHoy));
+  }
+  
+float tamanoDePosiciones(){
+   datetime tm=TimeCurrent();
+   MqlDateTime stm;
+   TimeToStruct(tm,stm);
+   diaHoy = stm.year*365 + stm.mon*12 + stm.day;
+   if(diaHoy - diaCumple < 1){
+      diferenciaEnDias = 1;
+   }else{
+      diferenciaEnDias = diaHoy - diaCumple;
+   }
+   tamanoPosiciones = diferenciaEnDias/100;
+   return tamanoPosiciones;
+}
+
+
+
+
+

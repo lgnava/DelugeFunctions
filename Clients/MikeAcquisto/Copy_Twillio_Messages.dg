@@ -1,0 +1,32 @@
+messages = zoho.crm.getRecords("twiliosmsextension0__Sent_SMS",0,50,{"cvid":2578777000056070003});
+
+for each message in messages{
+	
+	if(!message.get("To").isNull()){
+		Phone = message.get("To").replaceAll("\W|_","",false).replaceAll("\+","",false);
+		if(startsWith(Phone,"1")){	
+			Phone = Phone.subString(1);
+		}
+		contacts = zoho.crm.searchRecords("Contacts", "(Mobile:equals:"+Phone+")");
+		if(contacts.size() > 0){
+			info Phone;
+			info message.get("id");
+			info contacts.get(0).get("Full_Name");
+			info contacts.get(0).get("id");
+			m = Map();
+			m.put("ContactName", contacts.get(0).get("id"));
+			info zoho.crm.updateRecord("twiliosmsextension0__Sent_SMS", message.get("id"), m);
+			deals = zoho.crm.getRelatedRecords("Deals", "Contacts", contacts.get(0).get("id"));
+			if(deals.size() > 0){
+				mD = Map();
+				mD.put("twiliosmsextension0__DealName", deals.get(0).get("id"));
+				info zoho.crm.updateRecord("twiliosmsextension0__Sent_SMS", message.get("id"), mD);
+			}
+		}
+	}
+	
+	// updates their modified time so they dont appear until tomorrow in the list
+	mt = Map();
+	mt.put("Exchange_Rate", message.get("Exchange_Rate"));
+	info = zoho.crm.updateRecord("twiliosmsextension0__Sent_SMS", message.get("id"), mt);
+}

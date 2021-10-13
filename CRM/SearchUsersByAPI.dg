@@ -1,0 +1,10 @@
+response = invokeurl
+[
+	url: "https://www.zohoapis.com/crm/v2.1/users"
+	type: GET
+	connection:"crm_oauth_connection"
+];
+info response;
+ZohoCRM.users.
+ALL
+READ

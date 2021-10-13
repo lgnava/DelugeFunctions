@@ -1,0 +1,16 @@
+deal = zoho.crm.getRecordById("Deals",4758630000002982063);
+info deal;
+
+Cadena = "Hola, phDeal_Nameph espero te encuentres muy bien en tu Stage: phStageph";
+CadenaArray = Cadena.toList("ph");
+i = 0;
+for each ph in CadenaArray
+{
+	if(i.isOdd()){
+		info ph;
+		Cadena = Cadena.replaceAll("ph"+ph+"ph", deal.get(ph));
+	}
+	i = i + 1;
+}
+
+info Cadena;

@@ -1,0 +1,58 @@
+//SMSID = 2578777000055464008;
+SMS = zoho.crm.getRecordById("twiliosmsextension0__Sent_SMS",SMSID);
+//Find the record
+ModuleName = "";
+info SMS;
+if(!SMS.get("ContactName").isNull())
+{
+	RecordDetails = zoho.crm.getRecordById("Contacts",SMS.get("ContactName").get("id"));
+	ModuleName = "ContactName";
+	ContactID = RecordDetails.get("id");
+}
+if(!SMS.get("LeadName").isNull())
+{
+	RecordDetails = zoho.crm.getRecordById("Leads",SMS.get("LeadName").get("id"));
+	ModuleName = "LeadName";
+	ContactID = RecordDetails.get("id");
+}
+if(!SMS.get("twiliosmsextension0__DealName").isNull())
+{
+	Deal = zoho.crm.getRecordById("Deals",SMS.get("twiliosmsextension0__DealName").get("id"));
+	if(!Deal.get("Contact_Name").isNull())
+	{
+		RecordDetails = zoho.crm.getRecordById("Contacts",Deal.get("Contact_Name").get("id"));
+		ModuleName = "ContactName";
+		ContactID = RecordDetails.get("id");
+	}
+}
+Mobile = ifnull(RecordDetails.get("Mobile"),"");
+Text_Message = SMS.get("Message");
+From_SMS = SMS.get("From");
+//get the correct owner based on the last sms sent
+Messages = zoho.crm.searchRecords("twiliosmsextension0__Sent_SMS","(From:equals:" + From_SMS + ")",1,200,{"sort_by":"Created_Time","sort_order":"desc"});
+//info Messages;
+if(Messages.size() > 0)
+{
+	Count = 0;
+	for each  Message1 in Messages
+	{
+		if(Count == 0)
+		{
+			ownerid = Message1.get("Owner").get("id");
+			ownername = Message1.get("Owner").get("name");
+		}
+		Count = Count + 1;
+	}
+	recentrecord = Messages.get(0);
+}
+info ownername;
+email = zoho.crm.getRecordById("users",ownerid).get("users").get(0).get("email");
+MessageToUser = "Message From " + RecordDetails.get("First_Name") + " " + RecordDetails.get("Last_Name") + " To " + ownername + ". The Message is: " + Text_Message + " https://crm.zoho.com/crm/org628709947/tab/CustomModule13/" + SMSID;
+info MessageToUser;
+////post = zoho.cliq.postToUser(email,MessageToUser,"cliq");
+/*if(post.get("code") == "operation_failed")
+{
+	////post = zoho.cliq.postToBot("testbot",MessageToUser,"cliq");
+}*/
+////info post;
+//post = zoho.cliq.postToChannel(<TEXT>, <TEXT>)

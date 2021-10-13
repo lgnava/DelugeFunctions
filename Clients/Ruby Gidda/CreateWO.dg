@@ -1,0 +1,35 @@
+//DealID = "4392530000002767003";
+Deal = zoho.crm.getRecordById("Deals",DealID);
+dataMap = Map();
+//dataMap.put("Vendor", Deal.get("Vendor").get("id"));
+dataMap.put("Subject",Deal.get("Deal_Name") + " - " + zoho.currenttime.toString());
+if(!Deal.get("Contact_Name").isNull())
+{
+	dataMap.put("Contact_Name",Deal.get("Contact_Name").get("id"));
+}
+if(!Deal.get("Account_Name").isNull())
+{
+	dataMap.put("Account_Name",Deal.get("Account_Name").get("id"));
+}
+else
+{
+	return "The opportunity should have an account. No WO created.";
+}
+dataMap.put("Deal_Name",DealID);
+products = zoho.crm.getRelatedRecords("Products","Deals",DealID);
+if(products.isEmpty())
+{
+	return "The opportunity doesn't have any products. No WO created.";
+}
+products_wo = List();
+for each  product in products
+{
+	productMap = Map();
+	productMap.put("product",product.get("id"));
+	productMap.put("quantity",1);
+	products_wo.add(productMap);
+}
+dataMap.put("Product_Details",products_wo);
+create_wo = zoho.crm.createRecord("Sales_Orders",dataMap);
+info create_wo;
+return "Work Order Created Succesfully";

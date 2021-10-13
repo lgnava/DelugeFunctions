@@ -1,0 +1,35 @@
+//DealID = 3901090000001203002;
+Deal = zoho.crm.getRecordById("Deals",DealID);
+request_id = Deal.get("Request_ID");
+document_signed = zoho.sign.downloadDocument(request_id);
+info document_signed;
+document_signed.setParamName("file");
+attach_list = invokeurl
+[
+	url :"https://www.zohoapis.com/crm/v2/Deals/" + DealID + "/Attachments"
+	type :GET
+	connection:"crmwriter"
+];
+info attach_list;
+for each  attach in attach_list.get("data")
+{
+	info attach.get("File_Name");
+	if(attach.get("File_Name") == document_signed)
+	{
+		attach_delete = invokeurl
+		[
+			url :"https://www.zohoapis.com/crm/v2/Deals/" + DealID + "/Attachments/" + attach.get("id")
+			type :DELETE
+			connection:"crmwriter"
+		];
+		info attach_delete;
+	}
+}
+response = invokeurl
+[
+	url :"https://www.zohoapis.com/crm/v2/Deals/" + DealID + "/Attachments"
+	type :POST
+	files:document_signed
+	connection:"crmwriter"
+];
+info response;

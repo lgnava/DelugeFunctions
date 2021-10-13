@@ -1,0 +1,25 @@
+// MIKE, EDWARD
+
+JobID = 4518431000001784005;
+Job = zoho.crm.getRecordById("Jobs", JobID);
+folderName = "Job " + Job.get("Name");
+parentId = "hnlnk40734005a0594d43a7830816f21ef703";
+createdFolder = zoho.workdrive.createFolder(folderName, parentId,"workdrive");
+
+headermap = Map();
+headermap.put("Content-Type", "multipart/form-data; boundary=----WebKitFormBoundarYWxkTrZu0gW");
+link = createdFolder.get("data").get("attributes").get("permalink");
+info link;
+update = invokeurl
+[
+url: "https://www.zohoapis.com/crm/v2/Jobs/" + JobID + "/Attachments?attachmentUrl=" + link
+type: POST
+headers: headermap
+connection : "workdrive"
+];
+info update;
+
+/*
+{"data":[{"code":"SUCCESS","details":{"Modified_Time":"2020-08-04T17:03:41-05:00","Modified_By":{"name":"Jose Vega","id":"4518431000000268001"},"Created_Time":"2020-08-04T17:03:41-05:00","id":"4518431000001800001","Created_By":{"name":"Jose Vega","id":"4518431000000268001"}},"message":"attachment uploaded successfully","status":"success"}]}
+
+*/

@@ -1,0 +1,8 @@
+file_variable = invokeurl
+ [
+ url: "https://s3-external-1.amazonaws.com/media.twiliocdn.com/AC8bfb15bd014804297e41b7443127ebb5/d82630fccbdaee71d35222540fc9a118"
+ type: GET
+ ];
+ 
+ response = zoho.workdrive.uploadFile(file_variable, "lt5v67b668c130e0441129bffefcf6056d65e", file_variable, false, "writernworkdrive");
+ return "";

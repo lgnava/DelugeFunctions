@@ -1,0 +1,7 @@
+// Tejal
+det = zoho.crm.getRecordById("Contacts",id);
+openUrl("https://forms.zoho.com/graymattersmedicalpractice/form/ClientDetails?clinician=" + zoho.loginuser + "&clientid=" + det.get("MRN"),"same window");
+return "";
+
+// warining the crm field must be visible and a way to copy paste it too!!!!
+

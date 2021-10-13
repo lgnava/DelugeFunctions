@@ -1,0 +1,8 @@
+// install the plug in
+// WEBhook from CRM to the number message comes in
+// Test the Send Button and finish config there -> chekc from Sttings I can not automatically detect 1,2,4,5 checkboxes
+// Security control (under users and control) -> Data Sahring settings -> AllTwilio things -> change to RWD
+// Security control (under users and control) -> Profiles -> (on left) Automation should be on
+
+// add a cliq notification on fails, on twilio sms messages, for created, when type is inbound
+// use Notification_After_Twilio_SMS.dg

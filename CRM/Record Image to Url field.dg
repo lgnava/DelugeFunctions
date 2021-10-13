@@ -1,0 +1,10 @@
+// Vadim Record Image to Url in a field
+locationid = 4638880000000435035;
+location = zoho.crm.getRecordById("Locations", locationid);
+fileid = location.get("Record_Image");
+url= "https://crm.zoho.com/crm/org724054940/EntityImageAttach.do?action_module=CustomModule1&entityId="+locationid+"&actionName=readImage&fileId="+fileid;
+
+m = Map();
+m.put("Air_Picture_URL",url);
+response = zoho.crm.updateRecord("Locations", locationid, m);
+info response;

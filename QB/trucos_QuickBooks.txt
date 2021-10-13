@@ -1,0 +1,16 @@
+Página con los datos para sacar el primer token:
+https://developer.intuit.com/app/developer/qbo/docs/develop/sandboxes/postman#id1
+
+Página con las llaves:
+https://developer.intuit.com/app/developer/appdetail/test/keys?appId=djQuMTo6OGQzYmJlYTI3Yg:96de87f3-67ab-4f80-a475-19180c67b703
+
+Página con los trucaxos:
+https://blogs.intuit.com/blog/2017/08/03/quick-start-quickbooks-online-rest-api-oauth-2-0/
+
+Página del refresh token:
+https://developer.intuit.com/app/developer/qbo/docs/develop/authentication-and-authorization/oauth-2.0#refresh-the-token
+
+Página para base64:
+https://www.base64encode.org/
+
+Somos los más <inserte grosería> mejores!!

@@ -1,0 +1,52 @@
+// TEJAL
+
+meetings = zoho.crm.getRecords("Acuity_Temp_Meetings",0,200,{"cvid":4614186000001875222});
+
+for each meeting in meetings
+{
+	
+	contact = zoho.crm.searchRecords("Contacts", "(Email:equals:"+meeting.get("Email")+") and (Last_Name:equals:"+meeting.get("Last_Name")+")");
+	
+	//info contact.get(0);
+
+	
+	//info contact;
+	if(contact.size() > 0){
+		EventsMap = Map();
+		if(meeting.get("Start_Time").contains("pm")){
+			EventsMap.put("Start_DateTime",meeting.get("Start_Time").addHour(12).toString("yyyy-MM-dd'T'HH:mm:ss"));
+			EventsMap.put("End_DateTime",meeting.get("End_Time").addHour(12).toString("yyyy-MM-dd'T'HH:mm:ss"));
+		}else{
+			EventsMap.put("Start_DateTime",meeting.get("Start_Time").toString("yyyy-MM-dd'T'HH:mm:ss"));
+			EventsMap.put("End_DateTime",meeting.get("End_Time").toString("yyyy-MM-dd'T'HH:mm:ss"));
+		}
+		
+		EventsMap.put("Event_Title",meeting.get("Type"));
+		EventsMap.put("What_Id",contact.get(0).get("id"));
+		EventsMap.put("$se_module","Accounts");
+		EventsMap.put("Who_Id",contact.get(0));
+		EventsMap.put("What_Id",contact.get(0).get("Account_Name"));
+		EventsMap.put("Description",meeting.get("Type"));
+		EventsMap.put("send_notification",true); // CHANGE
+		EventsMap.put("Owner",contact.get(0).get("Owner").get("id"));
+		EventsMap.put("Remind_At","5 mins");
+		EventsMap.put("All_day",false);
+		
+		EventsMap.put("acuityscheduling1__Calendar_Name",meeting.get("Calendar"));
+		EventsMap.put("acuityscheduling1__Event_Price",meeting.get("Appointment_Price"));
+		EventsMap.put("Paid_Amount",meeting.get("Amount_Paid_Online").toNumber());
+		
+		EventsMap.put("acuityscheduling1__AcuityID",meeting.get("Acuity_ID"));
+		
+		res = zoho.crm.createRecord("Events",EventsMap);
+		info res;
+		
+		m = Map();
+		if(!res.get("id").isNull()){
+			m.put("Imported", "Yes");
+		}else{
+			m.put("Imported", "Failed");
+		}
+		info zoho.crm.updateRecord("Acuity_Temp_Meetings", meeting.get("id"), m);
+	}
+}

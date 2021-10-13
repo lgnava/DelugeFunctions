@@ -1,0 +1,14 @@
+//DealID = 1861472000033325310;
+Deal = zoho.crm.getRecordById("Deals",DealID);
+if(Deal.get("Probability").isNull())
+{
+	info "No probability";
+	return;
+}
+probability = Deal.get("Probability") / 100;
+expected_revenue = Deal.get("Total_Revenue1") * probability;
+info expected_revenue;
+dealMap = Map();
+dealMap.put("Expected_Revenue1",expected_revenue);
+set_expected_revenue = zoho.crm.updateRecord("Deals",DealID,dealMap);
+info set_expected_revenue;
